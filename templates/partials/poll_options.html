@@ -1,7 +1,7 @@
 {% if poll.show_results %}
 <ul class="poll-results">
     {% for option in poll.options.all %}
-    <li class="poll-result{% if option.id == poll.voted_option_id %} selected{% endif %}" data-option-id="{{ option.id }}">
+    <li class="poll-result{% if option.id == poll.voted_option_id %} selected{% endif %}" data-option-id="{{ option.id }}" data-order="{{ option.order }}">
         <span class="poll-result-bar" style="width: {{ option.percent }}%"></span>
         <span class="poll-result-label">{{ option.text }} — %{{ option.percent }} ({{ option.vote_count }})</span>
     </li>
@@ -10,7 +10,7 @@
 {% else %}
 <div class="poll-options">
     {% for option in poll.options.all %}
-    <form method="post" action="{% url 'polls:vote' poll.pk %}" class="vote-form">
+    <form method="post" action="{% url 'polls:vote' poll.pk %}" class="vote-form" data-order="{{ option.order }}">
         {% csrf_token %}
         <input type="hidden" name="option_id" value="{{ option.id }}">
         <button type="submit">{{ option.text }}</button>

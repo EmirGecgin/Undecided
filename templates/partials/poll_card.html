@@ -1,8 +1,5 @@
 <article class="poll-card" data-poll-id="{{ poll.pk }}">
-    <header>
-        <a href="{% url 'polls:profile' poll.author.username %}">@{{ poll.author.username }}</a>
-        <time>{{ poll.created_at|timesince }} önce</time>
-    </header>
+    {% include "partials/author_byline.html" %}
     <h2><a href="{% url 'polls:detail' poll.pk %}">{{ poll.question }}</a></h2>
     {% if poll.description %}<p>{{ poll.description }}</p>{% endif %}
 

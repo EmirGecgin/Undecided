@@ -59,10 +59,11 @@ function renderPollResults(container, data) {
     var ul = document.createElement("ul");
     ul.className = "poll-results";
 
-    data.results.forEach(function (result) {
+    data.results.forEach(function (result, index) {
         var li = document.createElement("li");
         li.className = "poll-result" + (result.option_id === data.voted_option_id ? " selected" : "");
         li.dataset.optionId = result.option_id;
+        li.dataset.order = index;
 
         var bar = document.createElement("span");
         bar.className = "poll-result-bar";
@@ -130,8 +131,20 @@ function setupVoteForms() {
     });
 }
 
+function setupToastDismiss() {
+    document.querySelectorAll(".toast").forEach(function (toast) {
+        setTimeout(function () {
+            toast.style.opacity = "0";
+            setTimeout(function () {
+                toast.remove();
+            }, 300);
+        }, 4000);
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     setupCharCounters();
     setupDynamicOptionFields();
     setupVoteForms();
+    setupToastDismiss();
 });

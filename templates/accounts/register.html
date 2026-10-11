@@ -4,6 +4,7 @@
 
 {% block content %}
 <h1>Kayıt Ol</h1>
+<div class="card">
 <form method="post" novalidate>
     {% csrf_token %}
     {{ form.non_field_errors }}
@@ -29,5 +30,6 @@
     </div>
     <button type="submit" class="btn btn-primary">Kayıt Ol</button>
 </form>
-<p>Zaten hesabın var mı? <a href="{% url 'accounts:login' %}">Giriş yap</a></p>
+<p class="form-footnote">Zaten hesabın var mı? <a href="{% url 'accounts:login' %}">Giriş yap</a></p>
+</div>
 {% endblock %}

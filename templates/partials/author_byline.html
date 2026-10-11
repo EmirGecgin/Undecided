@@ -1,0 +1,5 @@
+<div class="byline">
+    <span class="avatar" aria-hidden="true">{{ poll.author.username|slice:":1"|upper }}</span>
+    <a href="{% url 'polls:profile' poll.author.username %}" class="byline-username">@{{ poll.author.username }}</a>
+    <time class="byline-time">{{ poll.created_at|timesince }} önce</time>
+</div>
