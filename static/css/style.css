@@ -1,0 +1,25 @@
+.poll-result {
+    position: relative;
+    overflow: hidden;
+    padding: 4px 0;
+}
+
+.poll-result-bar {
+    position: absolute;
+    inset: 0;
+    width: 0;
+    background: rgba(0, 0, 0, 0.08);
+    transition: width 0.3s ease;
+    z-index: 0;
+}
+
+.poll-result.selected .poll-result-bar {
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.poll-result-label {
+    position: relative;
+    z-index: 1;
+    display: block;
+    padding: 2px 8px;
+}

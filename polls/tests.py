@@ -182,3 +182,110 @@ class VoteModelConstraintTests(TestCase):
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
                 Vote.objects.create(poll=self.poll, option=self.option_b, voter_token=token)
+
+
+class VoteViewTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="sahipkullanici", email="sahip@example.com", password=VALID_PASSWORD
+        )
+        self.member = User.objects.create_user(
+            username="uyekullanici", email="uye@example.com", password=VALID_PASSWORD
+        )
+        self.poll = Poll.objects.create(author=self.owner, question=VALID_QUESTION)
+        self.option_a = Option.objects.create(poll=self.poll, text="Sinema", order=0)
+        self.option_b = Option.objects.create(poll=self.poll, text="Restoran", order=1)
+
+    def _vote(self, option, ajax=True, **extra):
+        kwargs = {}
+        if ajax:
+            kwargs["HTTP_X_REQUESTED_WITH"] = "XMLHttpRequest"
+        kwargs.update(extra)
+        return self.client.post(
+            reverse("polls:vote", args=[self.poll.pk]),
+            {"option_id": option.pk},
+            **kwargs,
+        )
+
+    def test_guest_can_vote_once_then_blocked(self):
+        response = self._vote(self.option_a)
+        data = response.json()
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["total_votes"], 1)
+        self.assertEqual(data["voted_option_id"], self.option_a.pk)
+
+        response2 = self._vote(self.option_b)
+        self.assertEqual(response2.status_code, 409)
+        data2 = response2.json()
+        self.assertFalse(data2["ok"])
+        self.assertEqual(data2["voted_option_id"], self.option_a.pk)
+        self.assertEqual(Vote.objects.filter(poll=self.poll).count(), 1)
+
+    def test_member_can_vote_once_then_blocked(self):
+        self.client.force_login(self.member)
+        response = self._vote(self.option_a)
+        self.assertTrue(response.json()["ok"])
+
+        response2 = self._vote(self.option_b)
+        self.assertEqual(response2.status_code, 409)
+        self.assertEqual(Vote.objects.filter(poll=self.poll, user=self.member).count(), 1)
+
+    def test_percentages_and_counts_are_correct(self):
+        self.client.force_login(self.member)
+        self._vote(self.option_a)
+
+        other = User.objects.create_user(
+            username="ucuncukullanici", email="ucuncu@example.com", password=VALID_PASSWORD
+        )
+        self.client.force_login(other)
+        response = self._vote(self.option_a)
+        data = response.json()
+
+        self.assertEqual(data["total_votes"], 2)
+        by_id = {r["option_id"]: r for r in data["results"]}
+        self.assertEqual(by_id[self.option_a.pk]["votes"], 2)
+        self.assertEqual(by_id[self.option_a.pk]["percent"], 100)
+        self.assertEqual(by_id[self.option_b.pk]["votes"], 0)
+        total_percent = sum(r["percent"] for r in data["results"])
+        self.assertEqual(total_percent, 100)
+
+    def test_option_from_another_poll_returns_400(self):
+        other_poll = Poll.objects.create(author=self.owner, question="Başka bir soru mu?")
+        other_option = Option.objects.create(poll=other_poll, text="X", order=0)
+
+        response = self._vote(other_option)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Vote.objects.count(), 0)
+
+    def test_non_ajax_vote_redirects_to_detail(self):
+        response = self._vote(self.option_a, ajax=False)
+        self.assertRedirects(response, reverse("polls:detail", args=[self.poll.pk]))
+        self.assertEqual(Vote.objects.filter(poll=self.poll).count(), 1)
+
+    def test_detail_shows_results_after_voting(self):
+        self._vote(self.option_a)
+        response = self.client.get(reverse("polls:detail", args=[self.poll.pk]))
+        self.assertTrue(response.context["poll"].show_results)
+        self.assertContains(response, "poll-results")
+
+    def test_detail_shows_results_to_owner_without_voting(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("polls:detail", args=[self.poll.pk]))
+        self.assertTrue(response.context["poll"].show_results)
+
+    def test_detail_hides_results_before_voting_for_others(self):
+        self.client.force_login(self.member)
+        response = self.client.get(reverse("polls:detail", args=[self.poll.pk]))
+        self.assertFalse(response.context["poll"].show_results)
+        self.assertContains(response, "vote-form")
+
+    def test_populer_tab_orders_by_real_votes(self):
+        quiet_poll = Poll.objects.create(author=self.owner, question="Sessiz bir soru mu?")
+        Option.objects.create(poll=quiet_poll, text="A", order=0)
+        Option.objects.create(poll=quiet_poll, text="B", order=1)
+
+        self._vote(self.option_a)
+
+        response = self.client.get(reverse("polls:home"), {"sekme": "populer"})
+        polls = list(response.context["page_obj"])
+        self.assertEqual(polls[0].pk, self.poll.pk)

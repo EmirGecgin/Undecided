@@ -1,14 +1,12 @@
-<article class="poll-card">
+<article class="poll-card" data-poll-id="{{ poll.pk }}">
     <header>
         <a href="{% url 'polls:profile' poll.author.username %}">@{{ poll.author.username }}</a>
         <time>{{ poll.created_at|timesince }} önce</time>
     </header>
     <h2><a href="{% url 'polls:detail' poll.pk %}">{{ poll.question }}</a></h2>
     {% if poll.description %}<p>{{ poll.description }}</p>{% endif %}
-    <ul class="poll-options">
-        {% for option in poll.options.all %}
-        <li><button type="button" disabled>{{ option.text }}</button></li>
-        {% endfor %}
-    </ul>
-    <footer>{{ poll.vote_count }} oy</footer>
+
+    {% include "partials/poll_options.html" %}
+
+    <footer class="poll-vote-count">{{ poll.vote_count }} oy</footer>
 </article>

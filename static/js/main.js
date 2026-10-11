@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+function setupCharCounters() {
     document.querySelectorAll(".char-counter").forEach(function (counter) {
         var input = document.getElementById(counter.dataset.for);
         if (!input) return;
@@ -9,7 +9,9 @@ document.addEventListener("DOMContentLoaded", function () {
         input.addEventListener("input", update);
         update();
     });
+}
 
+function setupDynamicOptionFields() {
     var addButton = document.getElementById("add-option");
     if (!addButton) return;
 
@@ -39,4 +41,97 @@ document.addEventListener("DOMContentLoaded", function () {
             addButton.removeAttribute("hidden");
         });
     });
+}
+
+function getCookie(name) {
+    var prefix = name + "=";
+    var parts = document.cookie.split("; ");
+    for (var i = 0; i < parts.length; i++) {
+        if (parts[i].indexOf(prefix) === 0) {
+            return decodeURIComponent(parts[i].slice(prefix.length));
+        }
+    }
+    return null;
+}
+
+function renderPollResults(container, data) {
+    var optionsWrapper = container.querySelector(".poll-options");
+    var ul = document.createElement("ul");
+    ul.className = "poll-results";
+
+    data.results.forEach(function (result) {
+        var li = document.createElement("li");
+        li.className = "poll-result" + (result.option_id === data.voted_option_id ? " selected" : "");
+        li.dataset.optionId = result.option_id;
+
+        var bar = document.createElement("span");
+        bar.className = "poll-result-bar";
+        bar.style.width = "0%";
+
+        var label = document.createElement("span");
+        label.className = "poll-result-label";
+        label.textContent = result.text + " — %" + result.percent + " (" + result.votes + ")";
+
+        li.appendChild(bar);
+        li.appendChild(label);
+        ul.appendChild(li);
+    });
+
+    if (optionsWrapper) {
+        optionsWrapper.replaceWith(ul);
+    }
+
+    var countEl = container.querySelector(".poll-vote-count");
+    if (countEl) {
+        countEl.textContent = data.total_votes + " oy";
+    }
+
+    requestAnimationFrame(function () {
+        var bars = ul.querySelectorAll(".poll-result-bar");
+        bars.forEach(function (bar, index) {
+            bar.style.width = data.results[index].percent + "%";
+        });
+    });
+}
+
+function setupVoteForms() {
+    document.addEventListener("submit", function (event) {
+        var form = event.target;
+        if (!form.classList || !form.classList.contains("vote-form")) return;
+
+        event.preventDefault();
+        var container = form.closest("article");
+        if (!container) return;
+
+        fetch(form.action, {
+            method: "POST",
+            body: new FormData(form),
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": getCookie("csrftoken"),
+            },
+        })
+            .then(function (response) {
+                return response.json().then(function (data) {
+                    return { ok: response.ok, status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.data.ok || result.status === 409) {
+                    renderPollResults(container, result.data);
+                }
+                if (!result.data.ok) {
+                    window.alert(result.data.error || "Bir hata oluştu.");
+                }
+            })
+            .catch(function () {
+                window.alert("Bağlantı hatası, lütfen tekrar dene.");
+            });
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    setupCharCounters();
+    setupDynamicOptionFields();
+    setupVoteForms();
 });

@@ -3,7 +3,7 @@
 {% block title %}{{ poll.question }} — Kararsızım{% endblock %}
 
 {% block content %}
-<article class="poll-detail">
+<article class="poll-detail" data-poll-id="{{ poll.pk }}">
     <header>
         <a href="{% url 'polls:profile' poll.author.username %}">@{{ poll.author.username }}</a>
         <time>{{ poll.created_at|timesince }} önce</time>
@@ -11,13 +11,9 @@
     <h1>{{ poll.question }}</h1>
     {% if poll.description %}<p>{{ poll.description }}</p>{% endif %}
 
-    <ul class="poll-options">
-        {% for option in poll.options.all %}
-        <li><button type="button" disabled>{{ option.text }}</button></li>
-        {% endfor %}
-    </ul>
+    {% include "partials/poll_options.html" %}
 
-    <p>{{ poll.vote_count }} oy</p>
+    <p class="poll-vote-count">{{ poll.vote_count }} oy</p>
 
     {% if user == poll.author %}
     <form method="post" action="{% url 'polls:delete' poll.pk %}" onsubmit="return confirm('Bu anketi silmek istediğine emin misin?');">
