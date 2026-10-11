@@ -1,7 +1,7 @@
 <nav class="navbar">
     <a href="{% url 'polls:home' %}" class="navbar-logo">Kararsızım</a>
     <div class="navbar-actions">
-        <a href="#" class="btn btn-primary">Anket Aç</a>
+        <a href="{% url 'polls:create' %}" class="btn btn-primary">Anket Aç</a>
         {% if user.is_authenticated %}
             <span class="navbar-username">@{{ user.username }}</span>
             <form method="post" action="{% url 'accounts:logout' %}" class="navbar-logout-form">

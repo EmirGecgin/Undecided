@@ -1,7 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="tabs">
+    <a href="?sekme=en-yeni" class="tab {% if tab == 'en-yeni' %}active{% endif %}">En yeni</a>
+    <a href="?sekme=populer" class="tab {% if tab == 'populer' %}active{% endif %}">Popüler</a>
+</div>
+
+{% if page_obj.object_list %}
+    {% for poll in page_obj %}
+        {% include "partials/poll_card.html" %}
+    {% endfor %}
+    {% include "partials/pagination.html" %}
+{% else %}
 <div class="empty-state">
     <p>Henüz anket yok. İlk kararsızlığı sen paylaş! 🤔</p>
 </div>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Anket Aç — Kararsızım{% endblock %}
+
+{% block content %}
+<h1>Anket Aç</h1>
+<form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="form-field">
+        {{ form.question.label_tag }}
+        {{ form.question }}
+        <span class="char-counter" data-for="id_question" data-max="200"></span>
+        {{ form.question.errors }}
+    </div>
+
+    <div class="form-field">
+        {{ form.description.label_tag }}
+        {{ form.description }}
+        <span class="char-counter" data-for="id_description" data-max="500"></span>
+        {{ form.description.errors }}
+    </div>
+
+    <div id="option-fields">
+        <div class="option-field" data-index="1">
+            {{ form.option_1.label_tag }}
+            {{ form.option_1 }}
+            <span class="char-counter" data-for="id_option_1" data-max="80"></span>
+            {{ form.option_1.errors }}
+        </div>
+        <div class="option-field" data-index="2">
+            {{ form.option_2.label_tag }}
+            {{ form.option_2 }}
+            <span class="char-counter" data-for="id_option_2" data-max="80"></span>
+            {{ form.option_2.errors }}
+        </div>
+        <div class="option-field" data-index="3" hidden>
+            {{ form.option_3.label_tag }}
+            {{ form.option_3 }}
+            <span class="char-counter" data-for="id_option_3" data-max="80"></span>
+            <button type="button" class="option-remove">×</button>
+            {{ form.option_3.errors }}
+        </div>
+        <div class="option-field" data-index="4" hidden>
+            {{ form.option_4.label_tag }}
+            {{ form.option_4 }}
+            <span class="char-counter" data-for="id_option_4" data-max="80"></span>
+            <button type="button" class="option-remove">×</button>
+            {{ form.option_4.errors }}
+        </div>
+        <div class="option-field" data-index="5" hidden>
+            {{ form.option_5.label_tag }}
+            {{ form.option_5 }}
+            <span class="char-counter" data-for="id_option_5" data-max="80"></span>
+            <button type="button" class="option-remove">×</button>
+            {{ form.option_5.errors }}
+        </div>
+    </div>
+
+    <button type="button" id="add-option">+ Seçenek ekle</button>
+
+    <button type="submit" class="btn btn-primary">Anketi oluştur</button>
+</form>
+{% endblock %}
