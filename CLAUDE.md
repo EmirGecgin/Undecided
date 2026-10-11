@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Kararsızım — Proje Rehberi (CLAUDE.md)
 
 Bu dosya, Claude Code'un projeyi anlaması ve fazlar halinde geliştirmesi için hazırlanmıştır.
@@ -5,6 +9,45 @@ Projenin kök dizinine `CLAUDE.md` adıyla koy; Claude Code her oturumda bu dosy
 
 > **Claude Code için genel kural:** Her seferinde yalnızca istenen fazı uygula. Bir faz bitmeden sonrakine geçme.
 > Faz sonunda "Kabul kriterleri" listesini tek tek kontrol et, ne yaptığını kısaca özetle ve bir sonraki fazı bekle.
+
+---
+
+## 0. Geliştirme Komutları
+
+```bash
+# Ortamı kur (bir defalık)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # yerelde DATABASE_URL satırını yorumda bırak, otomatik SQLite kullanılır
+
+# Geliştirme sunucusu
+python manage.py runserver
+
+# Migration
+python manage.py makemigrations
+python manage.py migrate
+
+# Testler
+python manage.py test                                                      # tüm testler
+python manage.py test polls                                                # tek app
+python manage.py test polls.tests.PollModelTests.test_requires_two_options  # tek test
+
+# Sistem kontrolü
+python manage.py check
+python manage.py check --deploy   # prod'a almadan önce (Faz 5)
+```
+
+Bu projede henüz bir linter/formatter yapılandırılmamış (`requirements.txt`'te yok). Bölüm 13'teki kurala göre, prototip sade kalmalı — yeni bir araç eklemeden önce gerçekten gerekli olduğundan emin ol.
+
+### Mimari Özeti (çok dosyaya bakmadan anlaşılmayan noktalar)
+
+- **İki app, tek sorumluluk ayrımı:** `accounts` kimlik/kullanıcı, `polls` anket/seçenek/oy. `config/` sadece proje ayarları ve kök URL yönlendirmesidir (`config/urls.py` → `polls.urls`); iş mantığı app'lerin içinde kalmalı.
+- **Özel kullanıcı modeli (Faz 1'de eklenecek):** `accounts.User`, `AbstractUser`'dan türer ve email ile giriş yapar (`USERNAME_FIELD = "email"`), kullanıcı adı ayrı bir zorunlu/benzersiz alandır. Bu model **ilk migration'dan önce** `AUTH_USER_MODEL` olarak ayarlanmalı — sonradan değiştirmek çok zahmetli (bkz. bölüm 4.1).
+- **Çift modlu oy verme:** `polls.Vote` hem `user` (üye) hem `voter_token` (misafir çerezi) alanlarını barındırır; tam olarak biri dolu olmalı (`CheckConstraint` + koşullu `UniqueConstraint`'ler). Misafir kimliği bir middleware'in verdiği `voter_id` çerezinden gelir (bölüm 4.5); oy mantığına dokunurken middleware + model kısıtlarını birlikte okumak gerekir.
+- **Oy verme JSON sözleşmesi** (bölüm 7), frontend (`static/js/main.js`) ile `polls` view'ları arasındaki tek temas noktasıdır. Sunucu tarafı doğrulama JS'den tamamen bağımsız olmalı: JS kapalıyken aynı endpoint normal form POST'u ile de çalışmalı (progressive enhancement, bölüm 7–8).
+- **Ortam bazlı veritabanı seçimi:** `config/settings.py`, `DATABASE_URL` tanımlıysa Supabase/Postgres'e (transaction pooler, port 6543, `DISABLE_SERVER_SIDE_CURSORS=True`) bağlanır; tanımlı değilse SQLite'a düşer. Migration'lar prod'da Vercel build'inde değil, yerelden (session pooler/direkt bağlantı, port 5432) çalıştırılır (bölüm 10).
+- **Fazlı geliştirme kuralı:** Bu dosyanın asıl amacı bölüm 12'deki fazları sırayla uygulamaktır — bir faz bitmeden sonrakine geçilmez, her fazın sonunda ilgili "Kabul kriterleri" tek tek doğrulanır. Şu an **Faz 0 tamamlandı** (proje iskeleti); sıradaki adım Faz 1 (kullanıcı sistemi).
 
 ---
 
