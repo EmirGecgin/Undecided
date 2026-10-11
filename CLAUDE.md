@@ -47,7 +47,7 @@ Bu projede henüz bir linter/formatter yapılandırılmamış (`requirements.txt
 - **Çift modlu oy verme:** `polls.Vote` hem `user` (üye) hem `voter_token` (misafir çerezi) alanlarını barındırır; tam olarak biri dolu olmalı (`CheckConstraint` + koşullu `UniqueConstraint`'ler). Misafir kimliği bir middleware'in verdiği `voter_id` çerezinden gelir (bölüm 4.5); oy mantığına dokunurken middleware + model kısıtlarını birlikte okumak gerekir.
 - **Oy verme JSON sözleşmesi** (bölüm 7), frontend (`static/js/main.js`) ile `polls` view'ları arasındaki tek temas noktasıdır. Sunucu tarafı doğrulama JS'den tamamen bağımsız olmalı: JS kapalıyken aynı endpoint normal form POST'u ile de çalışmalı (progressive enhancement, bölüm 7–8).
 - **Ortam bazlı veritabanı seçimi:** `config/settings.py`, `DATABASE_URL` tanımlıysa Supabase/Postgres'e (transaction pooler, port 6543, `DISABLE_SERVER_SIDE_CURSORS=True`) bağlanır; tanımlı değilse SQLite'a düşer. Migration'lar prod'da Vercel build'inde değil, yerelden (session pooler/direkt bağlantı, port 5432) çalıştırılır (bölüm 10).
-- **Fazlı geliştirme kuralı:** Bu dosyanın asıl amacı bölüm 12'deki fazları sırayla uygulamaktır — bir faz bitmeden sonrakine geçilmez, her fazın sonunda ilgili "Kabul kriterleri" tek tek doğrulanır. Şu an **Faz 0 tamamlandı** (proje iskeleti); sıradaki adım Faz 1 (kullanıcı sistemi).
+- **Fazlı geliştirme kuralı:** Bu dosyanın asıl amacı bölüm 12'deki fazları sırayla uygulamaktır — bir faz bitmeden sonrakine geçilmez, her fazın sonunda ilgili "Kabul kriterleri" tek tek doğrulanır. Şu an **Faz 1 tamamlandı** (kullanıcı sistemi); sıradaki adım Faz 2 (anket oluşturma ve listeleme).
 
 ---
 

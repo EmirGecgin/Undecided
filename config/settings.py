@@ -135,6 +135,14 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
+# Auth
+
+AUTH_USER_MODEL = "accounts.User"
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "polls:home"
+LOGOUT_REDIRECT_URL = "polls:home"
+
+
 # Production security settings (only active when DEBUG=False)
 
 if not DEBUG:
