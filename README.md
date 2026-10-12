@@ -3,6 +3,7 @@
 Kullanıcıların kararsız kaldıkları konularda diğer kullanıcılara anket açarak danıştığı bir web uygulaması.
 
 **Canlı:** https://kararsizim-pink.vercel.app
+**Admin:** https://kararsizim-pink.vercel.app/admin/
 
 Detaylı proje rehberi için [CLAUDE.md](CLAUDE.md) dosyasına bakın.
 
