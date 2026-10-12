@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Sayfa bulunamadı — Kararsızım{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-code" aria-hidden="true">404</div>
+    <h1>Bu sayfa kayıp, tıpkı kararsızlığın gibi</h1>
+    <p>Aradığın sayfa bulunamadı ya da kaldırılmış olabilir.</p>
+    <a href="{% url 'polls:home' %}" class="btn btn-primary">Ana sayfaya dön</a>
+</div>
+{% endblock %}

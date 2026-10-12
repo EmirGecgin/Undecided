@@ -293,8 +293,8 @@ kararsizim/
 - Butonlar hap şeklinde (`border-radius: 999px`), hover'da hafif büyüme (`transform: scale(1.03)`).
 - Anket kartı: üstte yazar (`@kullaniciadi` + renkli baş harf avatarı) ve zaman, ortada soru, altta seçenekler, en altta oy sayısı.
 - Boş durumlar dostça: "Henüz anket yok. İlk kararsızlığı sen paylaş! 🤔"
-- **Mobil öncelikli** tasarım; tek sütun, 640px üzerinde ortalanmış maksimum 680px genişlik.
-- Erişilebilirlik: yeterli kontrast, odak (focus) halkaları görünür, butonlar gerçek `<button>`.
+- **Mobil öncelikli** tasarım; mobilde tek sütun, ana sayfada 640px üzerinde kartlar 2 sütun.
+- **Erişilebilirlik**: yeterli kontrast, odak (focus) halkaları görünür (`select` dahil), butonlar gerçek `<button>`. Skip link (`.skip-link`, `#main-content`). Sonuç çubukları `role="progressbar"` + `aria-valuenow/min/max` ile duyuruluyor; seçili seçenek rengin yanında metinle de ("✓") belirtiliyor — bilgi asla sadece renge dayanmamalı (renk körlüğü). Toast mesajları `role="status" aria-live="polite"`. Dekoratif emojiler `aria-hidden="true"`. Aktif sekme/kategori `aria-current`.
 
 ---
 
@@ -330,6 +330,7 @@ DATABASE_URL=postgresql://postgres.[proje-ref]:[parola]@aws-0-[bolge].pooler.sup
 - Kullanıcı girdisi şablonlarda otomatik escape edilir; `|safe` kullanılmaz.
 - Silme işlemi yalnızca sahibine; başkası denerse `403`.
 - Django'nun parola doğrulayıcıları açık (en az 8 karakter).
+- Özel hata sayfaları: `templates/404.html`, `templates/403.html` (sitenin tasarımıyla, `base.html` üzerinden) ve `templates/500.html` (**bağımsız**, context'e/`base.html`'e güvenmeden, inline CSS — 500 anında context processor'ların kendisi patlamış olabilir). `DEBUG=False` iken Django bunları otomatik kullanır, ekstra view/URL tanımı gerekmez.
 
 ---
 

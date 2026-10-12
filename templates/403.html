@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Yetkin yok — Kararsızım{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-code" aria-hidden="true">403</div>
+    <h1>Bu işlem için yetkin yok</h1>
+    <p>Sadece anketin sahibi bu işlemi yapabilir.</p>
+    <a href="{% url 'polls:home' %}" class="btn btn-primary">Ana sayfaya dön</a>
+</div>
+{% endblock %}

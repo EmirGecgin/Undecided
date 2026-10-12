@@ -10,9 +10,10 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
+    <a href="#main-content" class="skip-link">İçeriğe geç</a>
     {% include "partials/navbar.html" %}
 
-    <main class="container">
+    <main class="container" id="main-content">
         {% include "partials/messages.html" %}
         {% block content %}{% endblock %}
     </main>

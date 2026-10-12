@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Prefetch, Q
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -160,7 +160,7 @@ def create(request):
 def delete(request, pk):
     poll = get_object_or_404(Poll, pk=pk)
     if poll.author_id != request.user.id:
-        return HttpResponseForbidden("Bu anketi silme yetkin yok.")
+        return render(request, "403.html", status=403)
     poll.delete()
     return redirect("polls:home")
 

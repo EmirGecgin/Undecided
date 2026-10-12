@@ -1,23 +1,24 @@
 {% extends "base.html" %}
 
 {% block content %}
-<form method="get" class="search-form">
-    <input type="text" name="q" value="{{ query }}" placeholder="Anketlerde ara...">
+<form method="get" class="search-form" role="search">
+    <label for="search-input" class="visually-hidden">Anketlerde ara</label>
+    <input type="text" id="search-input" name="q" value="{{ query }}" placeholder="Anketlerde ara...">
     {% if tab %}<input type="hidden" name="sekme" value="{{ tab }}">{% endif %}
     <button type="submit" class="btn">Ara</button>
 </form>
 
-<div class="category-pills">
-    <a href="?sekme={{ tab }}&q={{ query|urlencode }}" class="pill {% if not category %}active{% endif %}">Tümü</a>
+<nav class="category-pills" aria-label="Kategoriler">
+    <a href="?sekme={{ tab }}&q={{ query|urlencode }}" class="pill {% if not category %}active{% endif %}"{% if not category %} aria-current="true"{% endif %}>Tümü</a>
     {% for value, label in categories %}
-    <a href="?sekme={{ tab }}&q={{ query|urlencode }}&kategori={{ value }}" class="pill {% if category == value %}active{% endif %}">{{ label }}</a>
+    <a href="?sekme={{ tab }}&q={{ query|urlencode }}&kategori={{ value }}" class="pill {% if category == value %}active{% endif %}"{% if category == value %} aria-current="true"{% endif %}>{{ label }}</a>
     {% endfor %}
-</div>
+</nav>
 
-<div class="tabs">
-    <a href="?sekme=en-yeni&q={{ query|urlencode }}&kategori={{ category }}" class="tab {% if tab == 'en-yeni' %}active{% endif %}">En yeni</a>
-    <a href="?sekme=populer&q={{ query|urlencode }}&kategori={{ category }}" class="tab {% if tab == 'populer' %}active{% endif %}">Popüler</a>
-</div>
+<nav class="tabs" aria-label="Sıralama">
+    <a href="?sekme=en-yeni&q={{ query|urlencode }}&kategori={{ category }}" class="tab {% if tab == 'en-yeni' %}active{% endif %}"{% if tab == 'en-yeni' %} aria-current="page"{% endif %}>En yeni</a>
+    <a href="?sekme=populer&q={{ query|urlencode }}&kategori={{ category }}" class="tab {% if tab == 'populer' %}active{% endif %}"{% if tab == 'populer' %} aria-current="page"{% endif %}>Popüler</a>
+</nav>
 
 {% if page_obj.object_list %}
     <div class="poll-grid">
@@ -31,7 +32,7 @@
     {% if query or category %}
         <p>Bu kritere uyan anket bulunamadı.</p>
     {% else %}
-        <p>Henüz anket yok. İlk kararsızlığı sen paylaş! 🤔</p>
+        <p>Henüz anket yok. İlk kararsızlığı sen paylaş! <span aria-hidden="true">🤔</span></p>
     {% endif %}
 </div>
 {% endif %}

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bir şeyler ters gitti — Kararsızım</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #FFF9F2;
+            color: #1E1B2E;
+            font-family: system-ui, -apple-system, sans-serif;
+            text-align: center;
+            padding: 24px;
+        }
+        .error-box {
+            max-width: 420px;
+        }
+        .error-code {
+            font-size: 64px;
+            font-weight: 800;
+            color: #7C3AED;
+            margin-bottom: 8px;
+        }
+        h1 {
+            font-size: 22px;
+            margin: 0 0 12px;
+        }
+        p {
+            color: #6B6680;
+            margin: 0 0 24px;
+        }
+        a.btn {
+            display: inline-block;
+            background: #7C3AED;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 12px 28px;
+            border-radius: 999px;
+        }
+        a.btn:focus-visible {
+            outline: 3px solid #1E1B2E;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-box">
+        <div class="error-code" aria-hidden="true">500</div>
+        <h1>Bir şeyler ters gitti</h1>
+        <p>Sunucuda beklenmedik bir hata oluştu. Birazdan tekrar dener misin?</p>
+        <a href="/" class="btn">Ana sayfaya dön</a>
+    </div>
+</body>
+</html>

@@ -2,7 +2,7 @@
     <span class="badge badge-category">{{ poll.get_category_display }}</span>
     {% if poll.expires_at %}
         {% if poll.is_closed %}
-        <span class="badge badge-closed">🔒 Kapandı</span>
+        <span class="badge badge-closed"><span aria-hidden="true">🔒</span> Kapandı</span>
         {% else %}
         <span class="badge badge-countdown">{{ poll.expires_at|timeuntil }} sonra kapanır</span>
         {% endif %}
