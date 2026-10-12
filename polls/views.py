@@ -1,4 +1,5 @@
 import uuid
+from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -8,6 +9,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Count, Prefetch, Q
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import PollCreateForm
@@ -54,7 +56,7 @@ def _attach_viewer_state(poll, request):
     is_owner = request.user.is_authenticated and poll.author_id == request.user.id
 
     poll.voted_option_id = viewer_vote.option_id if viewer_vote else None
-    poll.show_results = bool(viewer_vote) or is_owner
+    poll.show_results = bool(viewer_vote) or is_owner or poll.is_closed
 
     total = poll.vote_count
     for option in poll.options.all():
@@ -87,7 +89,17 @@ def _build_vote_payload(poll, voted_option_id, ok=True, error=None):
 
 def home(request):
     tab = request.GET.get("sekme")
+    query = request.GET.get("q", "").strip()
+    category = request.GET.get("kategori", "")
+
     polls = _polls_queryset(request)
+    if query:
+        polls = polls.filter(question__icontains=query)
+    if category in dict(Poll.CATEGORY_CHOICES):
+        polls = polls.filter(category=category)
+    else:
+        category = ""
+
     if tab == "populer":
         polls = polls.order_by("-vote_count", "-created_at")
     else:
@@ -98,7 +110,17 @@ def home(request):
     for poll in page_obj:
         _attach_viewer_state(poll, request)
 
-    return render(request, "polls/home.html", {"page_obj": page_obj, "tab": tab})
+    return render(
+        request,
+        "polls/home.html",
+        {
+            "page_obj": page_obj,
+            "tab": tab,
+            "query": query,
+            "category": category,
+            "categories": Poll.CATEGORY_CHOICES,
+        },
+    )
 
 
 def detail(request, pk):
@@ -112,10 +134,16 @@ def create(request):
     if request.method == "POST":
         form = PollCreateForm(request.POST)
         if form.is_valid():
+            duration = form.cleaned_data.get("duration_hours")
+            expires_at = (
+                timezone.now() + timedelta(hours=int(duration)) if duration else None
+            )
             poll = Poll.objects.create(
                 author=request.user,
                 question=form.cleaned_data["question"],
                 description=form.cleaned_data["description"],
+                category=form.cleaned_data["category"],
+                expires_at=expires_at,
             )
             Option.objects.bulk_create(
                 Option(poll=poll, text=text, order=index)
@@ -140,6 +168,20 @@ def delete(request, pk):
 @require_POST
 def vote(request, pk):
     poll = get_object_or_404(Poll, pk=pk)
+
+    if poll.is_closed:
+        existing = _existing_vote(poll, request)
+        payload = _build_vote_payload(
+            poll,
+            existing.option_id if existing else None,
+            ok=False,
+            error="Bu anketin süresi doldu.",
+        )
+        if _is_ajax(request):
+            return JsonResponse(payload, status=409)
+        messages.error(request, payload["error"])
+        return redirect("polls:detail", pk=poll.pk)
+
     option_id = request.POST.get("option_id")
 
     option = Option.objects.filter(pk=option_id, poll=poll).first()

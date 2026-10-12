@@ -1,5 +1,6 @@
 <article class="poll-card" data-poll-id="{{ poll.pk }}">
     {% include "partials/author_byline.html" %}
+    {% include "partials/poll_badges.html" %}
     <h2><a href="{% url 'polls:detail' poll.pk %}">{{ poll.question }}</a></h2>
     {% if poll.description %}<p>{{ poll.description }}</p>{% endif %}
 

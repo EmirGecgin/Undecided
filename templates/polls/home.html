@@ -1,9 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
+<form method="get" class="search-form">
+    <input type="text" name="q" value="{{ query }}" placeholder="Anketlerde ara...">
+    {% if tab %}<input type="hidden" name="sekme" value="{{ tab }}">{% endif %}
+    <button type="submit" class="btn">Ara</button>
+</form>
+
+<div class="category-pills">
+    <a href="?sekme={{ tab }}&q={{ query|urlencode }}" class="pill {% if not category %}active{% endif %}">Tümü</a>
+    {% for value, label in categories %}
+    <a href="?sekme={{ tab }}&q={{ query|urlencode }}&kategori={{ value }}" class="pill {% if category == value %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+</div>
+
 <div class="tabs">
-    <a href="?sekme=en-yeni" class="tab {% if tab == 'en-yeni' %}active{% endif %}">En yeni</a>
-    <a href="?sekme=populer" class="tab {% if tab == 'populer' %}active{% endif %}">Popüler</a>
+    <a href="?sekme=en-yeni&q={{ query|urlencode }}&kategori={{ category }}" class="tab {% if tab == 'en-yeni' %}active{% endif %}">En yeni</a>
+    <a href="?sekme=populer&q={{ query|urlencode }}&kategori={{ category }}" class="tab {% if tab == 'populer' %}active{% endif %}">Popüler</a>
 </div>
 
 {% if page_obj.object_list %}
@@ -13,7 +26,11 @@
     {% include "partials/pagination.html" %}
 {% else %}
 <div class="empty-state">
-    <p>Henüz anket yok. İlk kararsızlığı sen paylaş! 🤔</p>
+    {% if query or category %}
+        <p>Bu kritere uyan anket bulunamadı.</p>
+    {% else %}
+        <p>Henüz anket yok. İlk kararsızlığı sen paylaş! 🤔</p>
+    {% endif %}
 </div>
 {% endif %}
 {% endblock %}

@@ -214,6 +214,86 @@ textarea:focus-visible {
     color: var(--primary);
 }
 
+/* Search & categories */
+
+.search-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.search-form input {
+    flex: 1;
+    font-family: inherit;
+    font-size: 15px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.search-form input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-tint);
+}
+
+.category-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.pill {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.pill.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* Poll badges (category, duration) */
+
+.poll-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.badge-category {
+    background: var(--primary-tint);
+    color: var(--primary);
+}
+
+.badge-closed {
+    background: var(--border);
+    color: var(--text-muted);
+}
+
+.badge-countdown {
+    background: var(--opt-4-tint);
+    color: var(--opt-4);
+}
+
 /* Poll cards */
 
 .poll-card {
@@ -372,7 +452,8 @@ textarea:focus-visible {
 }
 
 .form-field input,
-.form-field textarea {
+.form-field textarea,
+.form-field select {
     font-family: inherit;
     font-size: 15px;
     padding: 10px 14px;
@@ -383,7 +464,8 @@ textarea:focus-visible {
 }
 
 .form-field input:focus,
-.form-field textarea:focus {
+.form-field textarea:focus,
+.form-field select:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 3px var(--primary-tint);

@@ -2,9 +2,25 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinLengthValidator
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 
 class Poll(models.Model):
+    CATEGORY_GENEL = "genel"
+    CATEGORY_YEMEK = "yemek"
+    CATEGORY_EGLENCE = "eglence"
+    CATEGORY_ALISVERIS = "alisveris"
+    CATEGORY_TEKNOLOJI = "teknoloji"
+    CATEGORY_SPOR = "spor"
+    CATEGORY_CHOICES = [
+        (CATEGORY_GENEL, "Genel"),
+        (CATEGORY_YEMEK, "Yemek"),
+        (CATEGORY_EGLENCE, "Eğlence"),
+        (CATEGORY_ALISVERIS, "Alışveriş"),
+        (CATEGORY_TEKNOLOJI, "Teknoloji"),
+        (CATEGORY_SPOR, "Spor"),
+    ]
+
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="polls"
     )
@@ -14,6 +30,10 @@ class Poll(models.Model):
         validators=[MinLengthValidator(5, message="Soru en az 5 karakter olmalı.")],
     )
     description = models.TextField("açıklama", max_length=500, blank=True)
+    category = models.CharField(
+        "kategori", max_length=20, choices=CATEGORY_CHOICES, default=CATEGORY_GENEL
+    )
+    expires_at = models.DateTimeField("bitiş zamanı", null=True, blank=True)
     created_at = models.DateTimeField("oluşturulma zamanı", auto_now_add=True)
 
     class Meta:
@@ -21,6 +41,10 @@ class Poll(models.Model):
 
     def __str__(self):
         return self.question
+
+    @property
+    def is_closed(self):
+        return self.expires_at is not None and self.expires_at <= timezone.now()
 
 
 class Option(models.Model):

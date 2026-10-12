@@ -1,11 +1,11 @@
 {% if page_obj.has_other_pages %}
 <nav class="pagination">
     {% if page_obj.has_previous %}
-    <a href="?sekme={{ tab }}&sayfa={{ page_obj.previous_page_number }}">Önceki</a>
+    <a href="?sekme={{ tab }}&q={{ query|urlencode }}&kategori={{ category }}&sayfa={{ page_obj.previous_page_number }}">Önceki</a>
     {% endif %}
     <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
     {% if page_obj.has_next %}
-    <a href="?sekme={{ tab }}&sayfa={{ page_obj.next_page_number }}">Sonraki</a>
+    <a href="?sekme={{ tab }}&q={{ query|urlencode }}&kategori={{ category }}&sayfa={{ page_obj.next_page_number }}">Sonraki</a>
     {% endif %}
 </nav>
 {% endif %}

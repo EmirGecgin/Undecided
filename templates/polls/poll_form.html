@@ -23,6 +23,18 @@
         {{ form.description.errors }}
     </div>
 
+    <div class="form-field">
+        {{ form.category.label_tag }}
+        {{ form.category }}
+        {{ form.category.errors }}
+    </div>
+
+    <div class="form-field">
+        {{ form.duration_hours.label_tag }}
+        {{ form.duration_hours }}
+        {{ form.duration_hours.errors }}
+    </div>
+
     <div id="option-fields">
         <div class="form-field option-field" data-index="1">
             {{ form.option_1.label_tag }}

@@ -5,6 +5,7 @@
 {% block content %}
 <article class="poll-card poll-detail" data-poll-id="{{ poll.pk }}">
     {% include "partials/author_byline.html" %}
+    {% include "partials/poll_badges.html" %}
     <h1>{{ poll.question }}</h1>
     {% if poll.description %}<p>{{ poll.description }}</p>{% endif %}
 

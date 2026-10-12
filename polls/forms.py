@@ -1,8 +1,19 @@
 from django import forms
 from django.core.validators import MinLengthValidator
 
+from .models import Poll
+
 MIN_OPTIONS = 2
 MAX_OPTIONS = 5
+
+DURATION_CHOICES = [
+    ("", "Süresiz"),
+    ("1", "1 saat"),
+    ("6", "6 saat"),
+    ("24", "24 saat"),
+    ("72", "3 gün"),
+    ("168", "7 gün"),
+]
 
 
 class PollCreateForm(forms.Form):
@@ -16,6 +27,12 @@ class PollCreateForm(forms.Form):
         max_length=500,
         required=False,
         widget=forms.Textarea,
+    )
+    category = forms.ChoiceField(
+        label="Kategori", choices=Poll.CATEGORY_CHOICES, initial=Poll.CATEGORY_GENEL
+    )
+    duration_hours = forms.ChoiceField(
+        label="Süre", choices=DURATION_CHOICES, required=False
     )
 
     def __init__(self, *args, **kwargs):

@@ -1,8 +1,10 @@
 import uuid
+from datetime import timedelta
 
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import User
 
@@ -22,6 +24,8 @@ class PollCreateViewTests(TestCase):
         data = {
             "question": VALID_QUESTION,
             "description": "",
+            "category": Poll.CATEGORY_GENEL,
+            "duration_hours": "",
             "option_1": "Sinema",
             "option_2": "Restoran",
             "option_3": "",
@@ -55,6 +59,8 @@ class PollCreateViewTests(TestCase):
         data = {
             "question": VALID_QUESTION,
             "description": "",
+            "category": Poll.CATEGORY_GENEL,
+            "duration_hours": "",
             "option_1": "A",
             "option_2": "B",
             "option_3": "C",
@@ -289,3 +295,81 @@ class VoteViewTests(TestCase):
         response = self.client.get(reverse("polls:home"), {"sekme": "populer"})
         polls = list(response.context["page_obj"])
         self.assertEqual(polls[0].pk, self.poll.pk)
+
+
+class PollExpiryTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="sahipkullanici", email="sahip@example.com", password=VALID_PASSWORD
+        )
+        self.other = User.objects.create_user(
+            username="digerkullanici", email="diger@example.com", password=VALID_PASSWORD
+        )
+        self.poll = Poll.objects.create(
+            author=self.owner,
+            question=VALID_QUESTION,
+            expires_at=timezone.now() - timedelta(hours=1),
+        )
+        self.option_a = Option.objects.create(poll=self.poll, text="A", order=0)
+        self.option_b = Option.objects.create(poll=self.poll, text="B", order=1)
+
+    def test_is_closed_true_when_expired(self):
+        self.assertTrue(self.poll.is_closed)
+
+    def test_vote_on_closed_poll_rejected(self):
+        response = self.client.post(
+            reverse("polls:vote", args=[self.poll.pk]),
+            {"option_id": self.option_a.pk},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(Vote.objects.count(), 0)
+
+    def test_closed_poll_shows_results_to_everyone(self):
+        self.client.force_login(self.other)
+        response = self.client.get(reverse("polls:detail", args=[self.poll.pk]))
+        self.assertTrue(response.context["poll"].show_results)
+        self.assertContains(response, "Kapandı")
+
+    def test_poll_with_future_expiry_is_not_closed(self):
+        poll = Poll.objects.create(
+            author=self.owner,
+            question="Henüz acik bir soru mu?",
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+        self.assertFalse(poll.is_closed)
+
+
+class SearchAndCategoryTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="sahipkullanici", email="sahip@example.com", password=VALID_PASSWORD
+        )
+
+    def _create_poll(self, question, category):
+        poll = Poll.objects.create(author=self.user, question=question, category=category)
+        Option.objects.create(poll=poll, text="A", order=0)
+        Option.objects.create(poll=poll, text="B", order=1)
+        return poll
+
+    def test_search_filters_by_question(self):
+        self._create_poll("Pizza mi yesem?", Poll.CATEGORY_YEMEK)
+        self._create_poll("Film mi izlesem?", Poll.CATEGORY_EGLENCE)
+
+        response = self.client.get(reverse("polls:home"), {"q": "pizza"})
+        self.assertContains(response, "Pizza mi yesem?")
+        self.assertNotContains(response, "Film mi izlesem?")
+
+    def test_category_filter(self):
+        self._create_poll("Pizza mi yesem?", Poll.CATEGORY_YEMEK)
+        self._create_poll("Film mi izlesem?", Poll.CATEGORY_EGLENCE)
+
+        response = self.client.get(reverse("polls:home"), {"kategori": Poll.CATEGORY_YEMEK})
+        self.assertContains(response, "Pizza mi yesem?")
+        self.assertNotContains(response, "Film mi izlesem?")
+
+    def test_invalid_category_is_ignored(self):
+        self._create_poll("Pizza mi yesem?", Poll.CATEGORY_YEMEK)
+
+        response = self.client.get(reverse("polls:home"), {"kategori": "uydurma"})
+        self.assertContains(response, "Pizza mi yesem?")
