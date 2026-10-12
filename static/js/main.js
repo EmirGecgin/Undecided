@@ -60,18 +60,29 @@ function renderPollResults(container, data) {
     ul.className = "poll-results";
 
     data.results.forEach(function (result, index) {
+        var isSelected = result.option_id === data.voted_option_id;
         var li = document.createElement("li");
-        li.className = "poll-result" + (result.option_id === data.voted_option_id ? " selected" : "");
+        li.className = "poll-result" + (isSelected ? " selected" : "");
         li.dataset.optionId = result.option_id;
         li.dataset.order = index;
+        li.setAttribute("role", "progressbar");
+        li.setAttribute("aria-valuenow", result.percent);
+        li.setAttribute("aria-valuemin", "0");
+        li.setAttribute("aria-valuemax", "100");
+        li.setAttribute(
+            "aria-label",
+            result.text + ": yüzde " + result.percent + ", " + result.votes + " oy" + (isSelected ? ", senin seçimin" : "")
+        );
 
         var bar = document.createElement("span");
         bar.className = "poll-result-bar";
         bar.style.width = "0%";
+        bar.setAttribute("aria-hidden", "true");
 
         var label = document.createElement("span");
         label.className = "poll-result-label";
-        label.textContent = result.text + " — %" + result.percent + " (" + result.votes + ")";
+        label.setAttribute("aria-hidden", "true");
+        label.textContent = result.text + " — %" + result.percent + " (" + result.votes + ")" + (isSelected ? " ✓" : "");
 
         li.appendChild(bar);
         li.appendChild(label);
