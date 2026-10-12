@@ -7,7 +7,7 @@
     </li>
     {% endfor %}
 </ul>
-{% else %}
+{% elif interactive %}
 <div class="poll-options">
     {% for option in poll.options.all %}
     <form method="post" action="{% url 'polls:vote' poll.pk %}" class="vote-form" data-order="{{ option.order }}">
@@ -17,4 +17,13 @@
     </form>
     {% endfor %}
 </div>
+{% else %}
+<ul class="poll-results poll-results-preview">
+    {% for option in poll.options.all %}
+    <li class="poll-result" data-order="{{ option.order }}">
+        <span class="poll-result-bar" style="width: 0%"></span>
+        <span class="poll-result-label">{{ option.text }}</span>
+    </li>
+    {% endfor %}
+</ul>
 {% endif %}

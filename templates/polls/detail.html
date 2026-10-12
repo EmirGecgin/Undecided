@@ -9,7 +9,7 @@
     <h1>{{ poll.question }}</h1>
     {% if poll.description %}<p>{{ poll.description }}</p>{% endif %}
 
-    {% include "partials/poll_options.html" %}
+    {% include "partials/poll_options.html" with interactive=True %}
 
     <p class="poll-vote-count">{{ poll.vote_count }} oy</p>
 

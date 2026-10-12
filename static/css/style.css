@@ -294,6 +294,20 @@ textarea:focus-visible {
     color: var(--opt-4);
 }
 
+/* Poll grid (2 columns on wider screens) */
+
+.poll-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+@media (min-width: 640px) {
+    .poll-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
 /* Poll cards */
 
 .poll-card {
@@ -302,6 +316,10 @@ textarea:focus-visible {
     box-shadow: var(--shadow);
     padding: 20px;
     margin-bottom: 16px;
+}
+
+.poll-grid .poll-card {
+    margin-bottom: 0;
 }
 
 .poll-detail {

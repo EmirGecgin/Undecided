@@ -132,6 +132,30 @@ class HomeAndProfileViewTests(TestCase):
         self.assertContains(response, poll.question)
         self.assertNotContains(response, self.user.email)
 
+    def test_home_shows_passive_preview_before_voting(self):
+        poll = Poll.objects.create(author=self.user, question=VALID_QUESTION)
+        Option.objects.create(poll=poll, text="A", order=0)
+        Option.objects.create(poll=poll, text="B", order=1)
+
+        response = self.client.get(reverse("polls:home"))
+        self.assertNotContains(response, "vote-form")
+        self.assertContains(response, "poll-results-preview")
+        self.assertNotContains(response, "— %")
+
+    def test_home_shows_real_results_after_voting(self):
+        poll = Poll.objects.create(author=self.user, question=VALID_QUESTION)
+        option_a = Option.objects.create(poll=poll, text="A", order=0)
+        Option.objects.create(poll=poll, text="B", order=1)
+        self.client.post(
+            reverse("polls:vote", args=[poll.pk]),
+            {"option_id": option_a.pk},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        response = self.client.get(reverse("polls:home"))
+        self.assertNotContains(response, "vote-form")
+        self.assertContains(response, "%100")
+
     def test_populer_tab_orders_by_vote_count(self):
         poll_low = Poll.objects.create(author=self.user, question="Az oylu bir soru mu?")
         Option.objects.create(poll=poll_low, text="A", order=0)

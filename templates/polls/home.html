@@ -20,9 +20,11 @@
 </div>
 
 {% if page_obj.object_list %}
-    {% for poll in page_obj %}
-        {% include "partials/poll_card.html" %}
-    {% endfor %}
+    <div class="poll-grid">
+        {% for poll in page_obj %}
+            {% include "partials/poll_card.html" %}
+        {% endfor %}
+    </div>
     {% include "partials/pagination.html" %}
 {% else %}
 <div class="empty-state">

@@ -194,8 +194,8 @@ kararsizim/
 
 1. Bir anket için kişi başı **tek oy**. Prototipte **oy değiştirilemez**.
 2. **Sonuçlar oy verdikten sonra** görünür (yüzde + oy sayısı + çubuk grafik). Anket sahibi sonuçları her zaman görür.
-3. Oy vermeden önce seçenekler sade butonlar olarak gösterilir.
-4. Toplam oy sayısı her durumda kartta görünür ("23 oy").
+3. **Ana sayfa/profilde anketler oy verilebilir şekilde görünmez** — seçenekler nötr (yüzdesiz) renkli barlar olarak önizlenir, oy vermek için anket başlığına tıklanıp detay sayfasına gidilir. Oy verme butonları (aktif) sadece **detay sayfasında**, oy vermemiş/sahip olmayan kullanıcıya gösterilir.
+4. Toplam oy sayısı her durumda kartta görünür ("23 oy"). Ana sayfada kartlar 640px üzeri genişliklerde 2 sütun, mobilde tek sütun.
 5. Anket sahibi **kendi anketini silebilir** (onay penceresiyle). Düzenleme prototipte yok.
 6. Anket sahibi kendi anketine oy verebilir.
 7. E-posta adresi hiçbir şablonda, API yanıtında veya HTML kaynağında görünmemeli.
