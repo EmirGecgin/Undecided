@@ -6,17 +6,28 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / ".env")
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-key-change-me")
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "True") == "True"
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "django-insecure-dev-key-change-me"
+    else:
+        # DEBUG=False iken SECRET_KEY'in koddaki sabit (ve repoda görünen) değere
+        # sessizce düşmesini engelle — aksi halde oturum/CSRF imzalama anahtarı
+        # tahmin edilebilir olurdu.
+        raise ImproperlyConfigured(
+            "SECRET_KEY ortam değişkeni tanımlı olmalı (DEBUG=False iken)."
+        )
 
 ALLOWED_HOSTS = [
     h.strip() for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()
