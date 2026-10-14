@@ -1,4 +1,10 @@
 {% if poll.show_results %}
+<div class="poll-chart" aria-hidden="true">
+    {% for option in poll.options.all %}
+    <span class="poll-chart-segment" data-order="{{ option.order }}" style="width: {{ option.percent }}%"></span>
+    {% endfor %}
+</div>
+{% if poll.status_label %}<p class="poll-status-label">{{ poll.status_label }}</p>{% endif %}
 <ul class="poll-results">
     {% for option in poll.options.all %}
     <li class="poll-result{% if option.id == poll.voted_option_id %} selected{% endif %}" data-option-id="{{ option.id }}" data-order="{{ option.order }}" role="progressbar" aria-valuenow="{{ option.percent }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ option.text }}: yüzde {{ option.percent }}, {{ option.vote_count }} oy{% if option.id == poll.voted_option_id %}, senin seçimin{% endif %}">
@@ -18,6 +24,11 @@
     {% endfor %}
 </div>
 {% else %}
+<div class="poll-chart poll-chart-neutral" aria-hidden="true">
+    {% for option in poll.options.all %}
+    <span class="poll-chart-segment" data-order="{{ option.order }}"></span>
+    {% endfor %}
+</div>
 <ul class="poll-results poll-results-preview" aria-label="Oy vermek için ankete git">
     {% for option in poll.options.all %}
     <li class="poll-result" data-order="{{ option.order }}">

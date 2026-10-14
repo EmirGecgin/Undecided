@@ -18,6 +18,7 @@
 <nav class="tabs" aria-label="Sıralama">
     <a href="?sekme=en-yeni&q={{ query|urlencode }}&kategori={{ category }}" class="tab {% if tab == 'en-yeni' %}active{% endif %}"{% if tab == 'en-yeni' %} aria-current="page"{% endif %}>En yeni</a>
     <a href="?sekme=populer&q={{ query|urlencode }}&kategori={{ category }}" class="tab {% if tab == 'populer' %}active{% endif %}"{% if tab == 'populer' %} aria-current="page"{% endif %}>Popüler</a>
+    <a href="?sekme=kapandi&q={{ query|urlencode }}&kategori={{ category }}" class="tab {% if tab == 'kapandi' %}active{% endif %}"{% if tab == 'kapandi' %} aria-current="page"{% endif %}>Kapananlar</a>
 </nav>
 
 {% if page_obj.object_list %}
@@ -31,6 +32,8 @@
 <div class="empty-state">
     {% if query or category %}
         <p>Bu kritere uyan anket bulunamadı.</p>
+    {% elif tab == 'kapandi' %}
+        <p>Henüz kapanan anket yok.</p>
     {% else %}
         <p>Henüz anket yok. İlk kararsızlığı sen paylaş! <span aria-hidden="true">🤔</span></p>
     {% endif %}

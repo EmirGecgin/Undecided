@@ -61,7 +61,23 @@ def _attach_viewer_state(poll, request):
     total = poll.vote_count
     for option in poll.options.all():
         option.percent = round(option.vote_count * 100 / total) if total else 0
+
+    poll.status_label = (
+        _status_label([option.percent for option in poll.options.all()], total)
+        if poll.show_results
+        else None
+    )
     return poll
+
+
+def _status_label(percents, total_votes):
+    if not total_votes:
+        return None
+    if max(percents) >= 50:
+        return "Karar net"
+    if len(percents) <= 2:
+        return "Az farkla önde"
+    return "Kalabalık da kararsız"
 
 
 def _build_vote_payload(poll, voted_option_id, ok=True, error=None):
@@ -81,6 +97,7 @@ def _build_vote_payload(poll, voted_option_id, ok=True, error=None):
         "total_votes": total_votes,
         "results": results,
         "voted_option_id": voted_option_id,
+        "status_label": _status_label([r["percent"] for r in results], total_votes),
     }
     if error:
         payload["error"] = error
@@ -102,6 +119,10 @@ def home(request):
 
     if tab == "populer":
         polls = polls.order_by("-vote_count", "-created_at")
+    elif tab == "kapandi":
+        polls = polls.filter(
+            expires_at__isnull=False, expires_at__lte=timezone.now()
+        ).order_by("-expires_at")
     else:
         tab = "en-yeni"
         polls = polls.order_by("-created_at")

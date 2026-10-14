@@ -56,8 +56,28 @@ function getCookie(name) {
 
 function renderPollResults(container, data) {
     var optionsWrapper = container.querySelector(".poll-options");
+
+    var chart = document.createElement("div");
+    chart.className = "poll-chart";
+    chart.setAttribute("aria-hidden", "true");
+
+    var statusLabel = null;
+    if (data.status_label) {
+        statusLabel = document.createElement("p");
+        statusLabel.className = "poll-status-label";
+        statusLabel.textContent = data.status_label;
+    }
+
     var ul = document.createElement("ul");
     ul.className = "poll-results";
+
+    data.results.forEach(function (result, index) {
+        var segment = document.createElement("span");
+        segment.className = "poll-chart-segment";
+        segment.dataset.order = index;
+        segment.style.width = "0%";
+        chart.appendChild(segment);
+    });
 
     data.results.forEach(function (result, index) {
         var isSelected = result.option_id === data.voted_option_id;
@@ -90,7 +110,10 @@ function renderPollResults(container, data) {
     });
 
     if (optionsWrapper) {
-        optionsWrapper.replaceWith(ul);
+        var nodes = [chart];
+        if (statusLabel) nodes.push(statusLabel);
+        nodes.push(ul);
+        optionsWrapper.replaceWith.apply(optionsWrapper, nodes);
     }
 
     var countEl = container.querySelector(".poll-vote-count");
@@ -102,6 +125,10 @@ function renderPollResults(container, data) {
         var bars = ul.querySelectorAll(".poll-result-bar");
         bars.forEach(function (bar, index) {
             bar.style.width = data.results[index].percent + "%";
+        });
+        var segments = chart.querySelectorAll(".poll-chart-segment");
+        segments.forEach(function (segment, index) {
+            segment.style.width = data.results[index].percent + "%";
         });
     });
 }

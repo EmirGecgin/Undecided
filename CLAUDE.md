@@ -256,46 +256,53 @@ kararsizim/
 
 ## 9. Tasarım Rehberi
 
-**Hedef kitle:** Gençler. **His:** Eğlenceli, enerjik ama temiz ve okunaklı.
-**Ana fikir:** Açık arka plan + canlı renkler, renklerin açık tonları (tint) yüzeylerde kullanılır.
+**Hedef kitle:** Gençler. **His:** Modern, sade, teknik — düz renkler, ağır gölge yok, bol boşluk.
+**Ana fikir:** Açık lavanta arka plan + beyaz kartlar, canlı ama dengeli bir aksan paleti; büyük/kalın başlıklar, sayısal/meta bilgiler monospace fontla ayrışır. Bu yön, `https://kararsizim.vercel.app` referans alınarak ama daha rafine bir palet ve tipografiyle (Faz 6 sonrası bir oturumda) uygulandı — eski sıcak krem/mor palet (Plus Jakarta Sans) tamamen bunun yerini aldı.
 
 ### Renk paleti (CSS değişkenleri, `:root` içinde)
 ```css
 :root {
-  --bg: #FFF9F2;          /* sıcak, açık krem arka plan */
-  --surface: #FFFFFF;     /* kartlar */
-  --text: #1E1B2E;        /* koyu mürdüm, saf siyah değil */
-  --text-muted: #6B6680;
-  --border: #EFE8F5;
+  --bg: #F5F4FB;           /* soft lavanta-beyaz arka plan */
+  --surface: #FFFFFF;      /* kartlar */
+  --text: #15132A;         /* koyu lacivert-siyah */
+  --text-muted: #6B6880;
+  --border: #E6E3F2;
 
-  --primary: #7C3AED;     /* canlı mor — ana butonlar, logo */
-  --primary-tint: #EFE7FF;
+  --primary: #5B4FE8;      /* canlı indigo-mor — ana butonlar, logo */
+  --primary-hover: #4C3FE0;
+  --primary-tint: #ECE9FF;
 
   /* 5 seçenek rengi (max 5 seçenek = her birine bir renk) */
-  --opt-1: #FF4D8D;  --opt-1-tint: #FFE3EE;  /* pembe */
-  --opt-2: #3B82F6;  --opt-2-tint: #E1EDFF;  /* mavi */
-  --opt-3: #FFB020;  --opt-3-tint: #FFF1D6;  /* sarı-turuncu */
-  --opt-4: #14C38E;  --opt-4-tint: #D9F7EC;  /* nane yeşili */
-  --opt-5: #FF6B3D;  --opt-5-tint: #FFE6DC;  /* mercan */
+  --opt-1: #5B4FE8;  --opt-1-tint: #ECE9FF;  /* indigo-mor */
+  --opt-2: #F0397A;  --opt-2-tint: #FFE3EE;  /* pembe */
+  --opt-3: #FFB224;  --opt-3-tint: #FFF2D9;  /* amber */
+  --opt-4: #11C98E;  --opt-4-tint: #D8F7EC;  /* yeşil */
+  --opt-5: #FF6B4A;  --opt-5-tint: #FFE3DA;  /* mercan */
 
-  --radius: 18px;
-  --shadow: 0 6px 24px rgba(124, 58, 237, 0.08);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 1px 2px rgba(21, 19, 42, 0.04), 0 10px 24px rgba(21, 19, 42, 0.05);
 }
 ```
-- Her seçenek `order` değerine göre kendi rengini alır: buton arka planı `tint`, kenarlık/çubuk ana renk.
-- Sonuç çubukları seçeneğin ana rengiyle dolar.
+- Her seçenek `order` değerine göre kendi rengini alır (`[data-order="N"]` → `--opt-color`/`--opt-tint`): oy verme butonu ve sonuç satırı sol kenarlıkla (`border-left: 4px solid var(--opt-color)`) renklenir; dolgu değil, vurgu çizgisi kullanılır.
+- **Birleşik sonuç çubuğu (`poll-chart`):** her anketin üstünde, tüm seçeneklerin tek bir ince (10px) çubukta segment segment yan yana dizildiği özet görünüm var (`static/partials/poll_options.html`). Sonuç görünürken segment genişlikleri gerçek yüzdeye göre (AJAX oy sonrası animasyonla genişler); ana sayfa/profil önizlemesinde (`poll-chart-neutral`) segmentler eşit genişlikte ve soluk — oy oranını ele vermez (bkz. bölüm 5 kural 3).
+- **Durum etiketi (`poll.status_label`):** sonuçlar görünür olduğunda oy dağılımına göre "Karar net" / "Az farkla önde" / "Kalabalık da kararsız" metni gösterilir (`views.py` içindeki `_status_label` fonksiyonu; AJAX oy yanıtında da `status_label` alanıyla döner). Oy yoksa gösterilmez.
 
 ### Tipografi
-- Google Fonts: **"Plus Jakarta Sans"** (400, 600, 800).
-- Soru başlıkları kalın (800), büyük; gövde 16px.
+- Google Fonts: **"Space Grotesk"** (400, 500, 700) — başlıklar ve gövde metni.
+- **"JetBrains Mono"** (400, 500, 600) — zaman damgaları, oy sayıları, karakter sayaçları, rozetler gibi tüm sayısal/meta metinler (`--font-mono`).
+- Soru başlıkları kalın (700), büyük; gövde 16px.
 
 ### Bileşen tarzı
-- Yuvarlak köşeler (`--radius`), yumuşak gölgeler, bol boşluk.
-- Butonlar hap şeklinde (`border-radius: 999px`), hover'da hafif büyüme (`transform: scale(1.03)`).
-- Anket kartı: üstte yazar (`@kullaniciadi` + renkli baş harf avatarı) ve zaman, ortada soru, altta seçenekler, en altta oy sayısı.
-- Boş durumlar dostça: "Henüz anket yok. İlk kararsızlığı sen paylaş! 🤔"
+- Yuvarlak köşeler (`--radius` kartlarda, `--radius-sm` input/satırlarda), hafif gölge (`--shadow`), ince `--border` kenarlık, bol boşluk.
+- Ana butonlar hap şeklinde (`border-radius: 999px`); oy verme/sonuç satırları ise daha az yuvarlak (`--radius-sm`) ve sol renkli kenarlıklı.
+- Sekmeler (`.tabs`) ve aktif kategori pilleri artı koyu lacivert dolgu (`var(--text)`) ile vurgulanır (mora kıyasla daha nötr/modern).
+- Anket kartı: üstte yazar (`@kullaniciadi` + köşeleri yuvarlatılmış kare baş harf avatarı) ve zaman, kategori/kapanış rozetleri, ortada soru, altta birleşik sonuç çubuğu + seçenekler, en altta oy sayısı.
+- Ana sayfada üç sekme: **"En yeni" / "Popüler" / "Kapananlar"** (süresi dolmuş anketler, `?sekme=kapandi`).
+- Boş durumlar dostça: "Henüz anket yok. İlk kararsızlığı sen paylaş! 🤔" (Kapananlar sekmesinde: "Henüz kapanan anket yok.").
 - **Mobil öncelikli** tasarım; mobilde tek sütun, ana sayfada 640px üzerinde kartlar 2 sütun.
-- **Erişilebilirlik**: yeterli kontrast, odak (focus) halkaları görünür (`select` dahil), butonlar gerçek `<button>`. Skip link (`.skip-link`, `#main-content`). Sonuç çubukları `role="progressbar"` + `aria-valuenow/min/max` ile duyuruluyor; seçili seçenek rengin yanında metinle de ("✓") belirtiliyor — bilgi asla sadece renge dayanmamalı (renk körlüğü). Toast mesajları `role="status" aria-live="polite"`. Dekoratif emojiler `aria-hidden="true"`. Aktif sekme/kategori `aria-current`.
+- **Erişilebilirlik**: yeterli kontrast, odak (focus) halkaları görünür (`select` dahil), butonlar gerçek `<button>`. Skip link (`.skip-link`, `#main-content`, `top: -80px` ile tamamen ekran dışı). Sonuç satırları `role="progressbar"` + `aria-valuenow/min/max` ile duyuruluyor (birleşik `poll-chart` segmentleri salt dekoratif, `aria-hidden="true"`); seçili seçenek rengin yanında metinle de ("✓") belirtiliyor — bilgi asla sadece renge dayanmamalı (renk körlüğü). Toast mesajları `role="status" aria-live="polite"`. Dekoratif emojiler `aria-hidden="true"`. Aktif sekme/kategori `aria-current`.
+- **ARIA/yapı senkronizasyonu:** `templates/partials/poll_options.html` ile `static/js/main.js`teki `renderPollResults` birebir aynı DOM yapısını (poll-chart + durum etiketi + poll-results) üretir; birini değiştirince diğerini güncellemeyi unutma (bkz. dosyanın başındaki mimari özet notu).
 
 ---
 
