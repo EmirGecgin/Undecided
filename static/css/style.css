@@ -417,7 +417,7 @@ select:focus-visible {
     color: #0A8F67;
 }
 
-/* Poll grid (2 columns on wider screens, 3 on very wide screens) */
+/* Poll grid (2 columns on wider screens, cards stay wide on large screens) */
 
 .poll-grid {
     display: grid;
@@ -428,12 +428,6 @@ select:focus-visible {
 @media (min-width: 640px) {
     .poll-grid {
         grid-template-columns: 1fr 1fr;
-    }
-}
-
-@media (min-width: 960px) {
-    .poll-grid {
-        grid-template-columns: 1fr 1fr 1fr;
     }
 }
 
