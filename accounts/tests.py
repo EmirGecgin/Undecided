@@ -1,3 +1,6 @@
+from unittest.mock import patch
+
+from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
 
@@ -41,6 +44,13 @@ class RegistrationViewTests(TestCase):
             response.context["form"], "username", "Bu kullanıcı adı zaten alınmış."
         )
 
+    def test_turkish_dotted_capital_i_in_username_is_accepted(self):
+        response = self._post_register(
+            username="İREM", email="irem@example.com"
+        )
+        self.assertRedirects(response, reverse("polls:home"))
+        self.assertTrue(User.objects.filter(username="irem").exists())
+
     def test_duplicate_email_case_insensitive_rejected(self):
         User.objects.create_user(
             username="ilkkullanici", email="ayni@example.com", password=VALID_PASSWORD
@@ -62,6 +72,28 @@ class RegistrationViewTests(TestCase):
         self.assertFormError(
             response.context["form"], "password2", "Parolalar birbiriyle eşleşmiyor."
         )
+
+    def test_password_same_as_username_rejected(self):
+        response = self._post_register(
+            username="gokhanyilmaz",
+            email="gokhanyilmaz@example.com",
+            password1="gokhanyilmaz",
+            password2="gokhanyilmaz",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].is_valid())
+        self.assertIn("password1", response.context["form"].errors)
+
+    def test_concurrent_duplicate_registration_shows_friendly_error(self):
+        with patch(
+            "accounts.forms.RegistrationForm.save",
+            side_effect=IntegrityError("duplicate key value violates unique constraint"),
+        ):
+            response = self._post_register()
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].is_valid())
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
+        self.assertEqual(User.objects.count(), 0)
 
 
 class LoginLogoutTests(TestCase):

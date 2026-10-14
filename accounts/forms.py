@@ -26,7 +26,11 @@ class RegistrationForm(forms.ModelForm):
         fields = ("username", "email")
 
     def clean_username(self):
-        username = self.cleaned_data["username"].strip().lower()
+        # Python'un locale-bağımsız .lower()'ı Türkçe büyük 'İ' harfini tek bir ASCII
+        # 'i' değil, iki karakterlik "i" + birleşik nokta işaretine çeviriyor (örn.
+        # "İREM" -> "i̇rem"), bu da aşağıdaki a-z regex'ini her zaman başarısız kılıyordu.
+        # Önce 'İ'yi düz ASCII 'i'ye indirip öyle küçültüyoruz.
+        username = self.cleaned_data["username"].strip().replace("İ", "i").lower()
         username_validator(username)
         if User.objects.filter(username=username).exists():
             raise forms.ValidationError("Bu kullanıcı adı zaten alınmış.")
@@ -38,12 +42,6 @@ class RegistrationForm(forms.ModelForm):
             raise forms.ValidationError("Bu e-posta adresi zaten kayıtlı.")
         return email
 
-    def clean_password1(self):
-        password1 = self.cleaned_data.get("password1")
-        if password1:
-            validate_password(password1)
-        return password1
-
     def clean(self):
         cleaned_data = super().clean()
         password1 = cleaned_data.get("password1")
@@ -51,6 +49,19 @@ class RegistrationForm(forms.ModelForm):
         if password1 and password2 and password1 != password2:
             self.add_error("password2", "Parolalar birbiriyle eşleşmiyor.")
         return cleaned_data
+
+    def _post_clean(self):
+        # self.instance henüz username/email ile bu adımda doldurulur (construct_instance
+        # super()._post_clean() içinde çalışır), bu yüzden UserAttributeSimilarityValidator
+        # (parola kullanıcı adı/e-posta ile aynı olamaz) ancak burada doğru çalışabilir —
+        # clean_password1'de self.instance boş olduğu için bu kontrol sessizce atlanıyordu.
+        super()._post_clean()
+        password1 = self.cleaned_data.get("password1")
+        if password1:
+            try:
+                validate_password(password1, self.instance)
+            except forms.ValidationError as error:
+                self.add_error("password1", error)
 
     def save(self, commit=True):
         user = super().save(commit=False)
