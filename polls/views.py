@@ -57,6 +57,7 @@ def _attach_viewer_state(poll, request):
 
     poll.voted_option_id = viewer_vote.option_id if viewer_vote else None
     poll.show_results = bool(viewer_vote) or is_owner or poll.is_closed
+    poll.can_vote = not poll.is_closed and poll.voted_option_id is None
 
     total = poll.vote_count
     for option in poll.options.all():

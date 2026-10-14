@@ -606,6 +606,23 @@ select:focus-visible {
     font-weight: 500;
 }
 
+button.poll-result {
+    display: block;
+    width: 100%;
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    text-align: left;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: background-color 0.15s ease;
+}
+
+button.poll-result:hover {
+    background: var(--opt-tint, var(--bg));
+}
+
 .poll-results-preview .poll-result {
     border-left: 4px solid var(--opt-color, var(--border));
     color: var(--text-muted);

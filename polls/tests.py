@@ -302,6 +302,22 @@ class VoteViewTests(TestCase):
         self.client.force_login(self.owner)
         response = self.client.get(reverse("polls:detail", args=[self.poll.pk]))
         self.assertTrue(response.context["poll"].show_results)
+        self.assertContains(response, "vote-form")
+
+    def test_owner_can_vote_on_own_poll(self):
+        self.client.force_login(self.owner)
+        response = self._vote(self.option_a)
+        data = response.json()
+        self.assertTrue(data["ok"])
+        self.assertEqual(
+            Vote.objects.filter(poll=self.poll, user=self.owner, option=self.option_a).count(), 1
+        )
+
+    def test_detail_hides_vote_form_from_owner_after_voting(self):
+        self.client.force_login(self.owner)
+        self._vote(self.option_a)
+        response = self.client.get(reverse("polls:detail", args=[self.poll.pk]))
+        self.assertNotContains(response, "vote-form")
 
     def test_detail_hides_results_before_voting_for_others(self):
         self.client.force_login(self.member)
