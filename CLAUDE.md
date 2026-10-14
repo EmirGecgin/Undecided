@@ -47,7 +47,8 @@ Bu projede henüz bir linter/formatter yapılandırılmamış (`requirements.txt
 - **Çift modlu oy verme:** `polls.Vote` hem `user` (üye) hem `voter_token` (misafir çerezi) alanlarını barındırır; tam olarak biri dolu olmalı (`CheckConstraint` + koşullu `UniqueConstraint`'ler). Misafir kimliği bir middleware'in verdiği `voter_id` çerezinden gelir (bölüm 4.5); oy mantığına dokunurken middleware + model kısıtlarını birlikte okumak gerekir.
 - **Oy verme JSON sözleşmesi** (bölüm 7), frontend (`static/js/main.js`) ile `polls` view'ları arasındaki tek temas noktasıdır. Sunucu tarafı doğrulama JS'den tamamen bağımsız olmalı: JS kapalıyken aynı endpoint normal form POST'u ile de çalışmalı (progressive enhancement, bölüm 7–8).
 - **Ortam bazlı veritabanı seçimi:** `config/settings.py`, `DATABASE_URL` tanımlıysa Supabase/Postgres'e (transaction pooler, port 6543, `DISABLE_SERVER_SIDE_CURSORS=True`) bağlanır; tanımlı değilse SQLite'a düşer. Migration'lar prod'da Vercel build'inde değil, yerelden (session pooler/direkt bağlantı, port 5432) çalıştırılır (bölüm 10).
-- **Fazlı geliştirme kuralı:** Bu dosyanın asıl amacı bölüm 12'deki fazları sırayla uygulamaktır — bir faz bitmeden sonrakine geçilmez, her fazın sonunda ilgili "Kabul kriterleri" tek tek doğrulanır. Şu an **Faz 5 tamamlandı** (Supabase + Vercel'e yayın); prototip canlıda. Faz 6'dan "anket bitiş süresi" ve "arama/kategoriler" eklendi (bkz. bölüm 12); listedeki diğer maddeler ihtiyaca göre seçilecek.
+- **Fazlı geliştirme kuralı:** Bu dosyanın asıl amacı bölüm 12'deki fazları sırayla uygulamaktır — bir faz bitmeden sonrakine geçilmez, her fazın sonunda ilgili "Kabul kriterleri" tek tek doğrulanır. Şu an **Faz 5 tamamlandı** (Supabase + Vercel'e yayın); prototip canlıda. Faz 6'dan "anket bitiş süresi" ve "arama/kategoriler" eklendi (bkz. bölüm 12); listedeki diğer maddeler ihtiyaca göre seçilecek. **Prod dağıtım durumu ve kritik tuzaklar için bölüm 10.1'i mutlaka oku.**
+- **Oy verme görünümü context'e göre dallanır:** `templates/partials/poll_options.html` üç moddan birini render eder — `poll.show_results` doluysa gerçek sonuç barı (herkese), değilse `interactive` context değişkenine bakılır: `True` ise aktif oy formu (sadece `polls/detail.html` bunu `{% include ... with interactive=True %}` ile geçiyor), yoksa (ana sayfa/profil) nötr/yüzdesiz önizleme barı. **`static/js/main.js`'teki `renderPollResults` bu üç moddan "gerçek sonuç" halini DOM'da yeniden üretir** (AJAX oy sonrası) — şablondaki ARIA attribute'ları (`role=progressbar`, `aria-valuenow/min/max`, seçili seçeneğe eklenen "✓") burada da birebir olmalı; biri değişince diğerini güncellemeyi unutma (bir kez unutulup sonradan fark edilip düzeltildi).
 
 ---
 
@@ -70,7 +71,7 @@ Bu projede henüz bir linter/formatter yapılandırılmamış (`requirements.txt
 
 | Katman | Seçim | Not |
 |---|---|---|
-| Dil | Python 3.12 | |
+| Dil | Python 3.12 | Bu makinede 3.12 kurulu değildi (pyenv/homebrew yok); kullanıcı onayıyla **3.14** ile devam edildi, Django 5.2 sorunsuz çalışıyor. Yeni bir makinede 3.12 varsa tercih et, yoksa 3.14'ü sorgulamadan kullan. |
 | Backend | Django 5.2 (LTS) | Django şablonları (server-side rendering) |
 | Veritabanı | Supabase (PostgreSQL) | Supabase **yalnızca Postgres veritabanı** olarak kullanılır |
 | Kimlik doğrulama | Django'nun kendi auth sistemi | Supabase Auth **kullanılmaz** |
@@ -320,6 +321,17 @@ DATABASE_URL=postgresql://postgres.[proje-ref]:[parola]@aws-0-[bolge].pooler.sup
   ```
 - **Migration'lar Vercel build'inde değil, yerelden çalıştırılır** (`python manage.py migrate`), tercihen session pooler / direkt bağlantı (port 5432) ile.
 - Supabase Data API (PostgREST) bu projede kullanılmıyor. Tabloların anon anahtarla dışarı açılmaması için Supabase panelinden Data API'yi kapat veya `public` şemasını açık şemalardan çıkar.
+
+### 10.1 Prod Dağıtım Durumu (Faz 5 sonrası — yeni oturum için önemli)
+
+- **Canlı URL:** https://kararsizim-pink.vercel.app
+- **Supabase projesi:** `kararsizim` (ref `ldlvktmqdrkvygplbdmb`, Frankfurt/eu-central-1, ücretsiz katman). Data API kapatıldı (RLS uyarısı bu yüzden yok, tekrar kontrol etmeye gerek yok).
+- **Vercel projesi:** `kararsizim`, GitHub reposu `EmirGecgin/Undecided` (private) içe aktarıldı ve bağlandı.
+- **Prod admin hesabı:** `admin@example.com`. Şifre önceki oturumda kullanıcıyla paylaşıldı; unutulduysa yerelden prod'a bağlanıp (`DATABASE_URL`'i geçici olarak prod'a çevirip) `python manage.py changepassword admin` ile sıfırlanabilir.
+- ⚠️ **Supabase pooler host'unun küme numarasını (`aws-0`, `aws-1`, ...) ASLA tahmin etme.** Bölgeden türetilemez; yanlış tahmin "tenant or user not found" hatası verir (bir kez yaşandı, saatler kaybedildi). Dashboard → proje → **Connect** butonu → "Transaction pooler" sekmesinden bağlantı dizesini birebir kopyala. Bu proje için doğru değer: `aws-1-eu-central-1.pooler.supabase.com` (yani `.env.example`'daki `aws-0` örneği sadece şablon, gerçek değer değil).
+- ⚠️ **Vercel'in otomatik deploy'u tutarsız çalışıyor.** Proje Vercel MCP ile (CLI/UI akışı değil) kurulduğu için GitHub push'ları bazen otomatik deploy tetikliyor, bazen tetiklemiyor (sebep netleşmedi). Push sonrası birkaç saniye bekleyip `list_deployments` (projectId: `prj_3AzPjZC3RHl7KVFWUOmpBQUDvgSk`) ile son commit'in deploy edilip edilmediğini kontrol et; edilmediyse `create_deployment` ile elle tetikle: `gitSource: {"type": "github", "org": "EmirGecgin", "repo": "Undecided", "ref": "main"}`, `project: "kararsizim"`, `target: "production"`.
+- Yeni bir Poll alanı/migration eklediğinde: hem yerelden `DATABASE_URL`'i geçici olarak prod'a çevirip `migrate` çalıştırmayı hem de sonra tekrar yorum satırı yapıp SQLite'a dönmeyi unutma (bir kez Faz 6'da migration prod'a uygulanmadan deploy edilip fark edilmişti).
+- İlk kurulumda Vercel proje ayarlarındaki varsayılan **Deployment Protection (SSO)** kapatıldı — açıksa site misafirlere kapalı kalır.
 
 ---
 
