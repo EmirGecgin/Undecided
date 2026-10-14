@@ -413,3 +413,21 @@ class SearchAndCategoryTests(TestCase):
 
         response = self.client.get(reverse("polls:home"), {"kategori": "uydurma"})
         self.assertContains(response, "Pizza mi yesem?")
+
+
+class VoterIDMiddlewareTests(TestCase):
+    def test_malformed_voter_id_cookie_is_replaced_not_fatal(self):
+        self.client.cookies["voter_id"] = "not-a-valid-uuid"
+        response = self.client.get(reverse("polls:home"))
+        self.assertEqual(response.status_code, 200)
+        new_cookie = response.cookies.get("voter_id")
+        self.assertIsNotNone(new_cookie)
+        uuid.UUID(new_cookie.value)
+
+    def test_valid_voter_id_cookie_is_kept_unchanged(self):
+        token = str(uuid.uuid4())
+        self.client.cookies["voter_id"] = token
+        response = self.client.get(reverse("polls:home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.cookies.get("voter_id"))
+        self.assertEqual(self.client.cookies["voter_id"].value, token)

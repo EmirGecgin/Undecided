@@ -13,6 +13,11 @@ class VoterIDMiddleware:
     def __call__(self, request):
         voter_id = request.COOKIES.get(VOTER_COOKIE_NAME)
         is_new = not voter_id
+        if not is_new:
+            try:
+                uuid.UUID(voter_id)
+            except ValueError:
+                is_new = True
         if is_new:
             voter_id = str(uuid.uuid4())
         request.voter_id = voter_id
