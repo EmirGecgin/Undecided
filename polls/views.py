@@ -12,6 +12,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from config.ratelimit import rate_limit
+
 from .forms import PollCreateForm
 from .models import Option, Poll, Vote
 
@@ -152,6 +154,7 @@ def detail(request, pk):
 
 
 @login_required
+@rate_limit("poll-create", limit=10, window_seconds=3600)
 def create(request):
     if request.method == "POST":
         form = PollCreateForm(request.POST)
@@ -188,6 +191,7 @@ def delete(request, pk):
 
 
 @require_POST
+@rate_limit("vote", limit=30, window_seconds=60)
 def vote(request, pk):
     poll = get_object_or_404(Poll, pk=pk)
 

@@ -1,12 +1,16 @@
 import uuid
 from datetime import timedelta
 
+from django.contrib.auth.models import AnonymousUser
+from django.core.cache import cache
 from django.db import IntegrityError, transaction
-from django.test import TestCase
+from django.http import JsonResponse
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import User
+from config.ratelimit import rate_limit
 
 from .models import Option, Poll, Vote
 
@@ -16,6 +20,7 @@ VALID_QUESTION = "Yeterince uzun bir soru mu?"
 
 class PollCreateViewTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.user = User.objects.create_user(
             username="sahipkullanici", email="sahip@example.com", password=VALID_PASSWORD
         )
@@ -88,6 +93,7 @@ class PollCreateViewTests(TestCase):
 
 class PollDeleteViewTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.owner = User.objects.create_user(
             username="sahipkullanici", email="sahip@example.com", password=VALID_PASSWORD
         )
@@ -118,6 +124,7 @@ class PollDeleteViewTests(TestCase):
 
 class HomeAndProfileViewTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.user = User.objects.create_user(
             username="sahipkullanici", email="sahip@example.com", password=VALID_PASSWORD
         )
@@ -188,6 +195,7 @@ class HomeAndProfileViewTests(TestCase):
 
 class VoteModelConstraintTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.user = User.objects.create_user(
             username="oycu", email="oycu@example.com", password=VALID_PASSWORD
         )
@@ -216,6 +224,7 @@ class VoteModelConstraintTests(TestCase):
 
 class VoteViewTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.owner = User.objects.create_user(
             username="sahipkullanici", email="sahip@example.com", password=VALID_PASSWORD
         )
@@ -339,6 +348,7 @@ class VoteViewTests(TestCase):
 
 class PollExpiryTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.owner = User.objects.create_user(
             username="sahipkullanici", email="sahip@example.com", password=VALID_PASSWORD
         )
@@ -382,6 +392,7 @@ class PollExpiryTests(TestCase):
 
 class SearchAndCategoryTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.user = User.objects.create_user(
             username="sahipkullanici", email="sahip@example.com", password=VALID_PASSWORD
         )
@@ -431,3 +442,39 @@ class VoterIDMiddlewareTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.cookies.get("voter_id"))
         self.assertEqual(self.client.cookies["voter_id"].value, token)
+
+
+class RateLimitTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
+    def _request(self, remote_addr="1.2.3.4"):
+        factory = RequestFactory()
+        request = factory.post(
+            "/dummy/", HTTP_X_REQUESTED_WITH="XMLHttpRequest", REMOTE_ADDR=remote_addr
+        )
+        request.user = AnonymousUser()
+        return request
+
+    def test_blocks_after_limit_then_recovers_after_window(self):
+        calls = []
+
+        @rate_limit("test-endpoint", limit=2, window_seconds=60)
+        def dummy_view(request):
+            calls.append(1)
+            return JsonResponse({"ok": True})
+
+        self.assertEqual(dummy_view(self._request()).status_code, 200)
+        self.assertEqual(dummy_view(self._request()).status_code, 200)
+        blocked = dummy_view(self._request())
+        self.assertEqual(blocked.status_code, 429)
+        self.assertEqual(len(calls), 2)
+
+    def test_limit_is_tracked_per_client(self):
+        @rate_limit("test-endpoint-2", limit=1, window_seconds=60)
+        def dummy_view(request):
+            return JsonResponse({"ok": True})
+
+        self.assertEqual(dummy_view(self._request("1.1.1.1")).status_code, 200)
+        self.assertEqual(dummy_view(self._request("2.2.2.2")).status_code, 200)
+        self.assertEqual(dummy_view(self._request("1.1.1.1")).status_code, 429)

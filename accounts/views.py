@@ -2,9 +2,12 @@ from django.contrib.auth import login
 from django.db import IntegrityError
 from django.shortcuts import redirect, render
 
+from config.ratelimit import rate_limit
+
 from .forms import RegistrationForm
 
 
+@rate_limit("register", limit=5, window_seconds=600)
 def register(request):
     if request.user.is_authenticated:
         return redirect("polls:home")

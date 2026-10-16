@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from django.core.cache import cache
 from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
@@ -19,6 +20,9 @@ class UserModelTests(TestCase):
 
 
 class RegistrationViewTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
     def _post_register(self, **overrides):
         data = {
             "username": "merhaba",
@@ -98,6 +102,7 @@ class RegistrationViewTests(TestCase):
 
 class LoginLogoutTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.user = User.objects.create_user(
             username="girisyapan", email="giris@example.com", password=VALID_PASSWORD
         )
