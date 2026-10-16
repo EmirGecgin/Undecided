@@ -1,4 +1,5 @@
 import random
+import secrets
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
@@ -9,8 +10,6 @@ from django.utils import timezone
 from polls.models import Option, Poll, Vote
 
 User = get_user_model()
-
-DEMO_PASSWORD = "DemoKullanici2026!"
 
 DEMO_USERNAMES = [
     "ayse_k",
@@ -78,9 +77,18 @@ class Command(BaseCommand):
             action="store_true",
             help="Sadece bu komutun oluşturduğu yeni anketlere oy ver; mevcut anketlere dokunma.",
         )
+        parser.add_argument(
+            "--password",
+            help=(
+                "Oluşturulan demo kullanıcılar için parola. Verilmezse her kullanıcı için "
+                "ayrı, rastgele bir parola üretilir ve ekrana yazdırılır (repoda sabit bir "
+                "parola tutmamak için — bkz. git geçmişindeki eski DEMO_PASSWORD sabiti)."
+            ),
+        )
 
     def handle(self, *args, **options):
         only_new_polls = options["only_new_polls"]
+        fixed_password = options["password"]
 
         users = []
         for username in DEMO_USERNAMES:
@@ -89,9 +97,10 @@ class Command(BaseCommand):
                 defaults={"email": f"{username}@example.com"},
             )
             if created:
-                user.set_password(DEMO_PASSWORD)
+                password = fixed_password or secrets.token_urlsafe(12)
+                user.set_password(password)
                 user.save()
-                self.stdout.write(f"Kullanıcı oluşturuldu: @{username}")
+                self.stdout.write(f"Kullanıcı oluşturuldu: @{username} (parola: {password})")
             users.append(user)
 
         new_polls = []
