@@ -334,7 +334,8 @@ DATABASE_URL=postgresql://postgres.[proje-ref]:[parola]@aws-0-[bolge].pooler.sup
 
 ### E-posta (parola sıfırlama)
 - `EMAIL_BACKEND` tanımlı değilse Django'nun konsol backend'i kullanılır — yerelde e-posta gerçekten gönderilmez, `runserver` çıktısına yazdırılır.
-- Prod'da **Resend**'in SMTP relay'i kullanılıyor: `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, `EMAIL_HOST=smtp.resend.com` (varsayılan), `EMAIL_HOST_USER=resend` (varsayılan), `EMAIL_HOST_PASSWORD=<Resend API anahtarı>`. Resend'de alan adı doğrulanmadıysa `DEFAULT_FROM_EMAIL` sadece hesap sahibinin kendi doğrulanmış adresine gönderebilir (sandbox kısıtı) — gerçek kullanıcılara göndermek için Resend panelinden bir alan adı doğrulanmalı.
+- Prod'da **Resend**'in SMTP relay'i kullanılıyor: `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, `EMAIL_HOST=smtp.resend.com` (varsayılan), `EMAIL_HOST_USER=resend` (varsayılan), `EMAIL_HOST_PASSWORD=<Resend API anahtarı>`. Bu üçü + `DEFAULT_FROM_EMAIL` Vercel ortam değişkenlerine eklendi (Faz 6 sonrası bir oturumda).
+- ⚠️ **Şu an sandbox modundayız** (Resend'de alan adı doğrulanmadı): `DEFAULT_FROM_EMAIL=Kararsızım <onboarding@resend.dev>` sadece Resend hesap sahibinin kendi (hesabı açarken kullandığı) adresine gönderebilir — **gerçek kullanıcılara parola sıfırlama e-postası gitmiyor**. `templates/accounts/password_reset_form.html`'de bunu açıklayan bir uyarı kutusu var. Gerçek kullanıcılara göndermek için: bir domain sahiplenip Resend panelinden doğrulamak (DNS'e SPF/DKIM kaydı eklemek) ve `DEFAULT_FROM_EMAIL`'i o domain'den bir adrese çevirmek gerekiyor — kullanıcı bunu bilerek erteledi.
 
 ### Supabase bağlantı notları
 - Vercel serverless olduğu için Supabase'in **pooler (transaction mode, port 6543)** bağlantı adresi kullanılır.

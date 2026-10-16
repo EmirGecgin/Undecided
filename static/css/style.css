@@ -908,6 +908,14 @@ button.poll-result:hover {
     color: var(--danger);
 }
 
+/* A toast used inline (not inside the fixed .messages stack) as a persistent notice */
+.notice-box {
+    margin-bottom: 16px;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .toast-success {
     border-color: var(--success);
     color: #0A8F67;
