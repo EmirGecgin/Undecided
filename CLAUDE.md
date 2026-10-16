@@ -47,7 +47,7 @@ Bu projede henüz bir linter/formatter yapılandırılmamış (`requirements.txt
 - **Çift modlu oy verme:** `polls.Vote` hem `user` (üye) hem `voter_token` (misafir çerezi) alanlarını barındırır; tam olarak biri dolu olmalı (`CheckConstraint` + koşullu `UniqueConstraint`'ler). Misafir kimliği bir middleware'in verdiği `voter_id` çerezinden gelir (bölüm 4.5); oy mantığına dokunurken middleware + model kısıtlarını birlikte okumak gerekir.
 - **Oy verme JSON sözleşmesi** (bölüm 7), frontend (`static/js/main.js`) ile `polls` view'ları arasındaki tek temas noktasıdır. Sunucu tarafı doğrulama JS'den tamamen bağımsız olmalı: JS kapalıyken aynı endpoint normal form POST'u ile de çalışmalı (progressive enhancement, bölüm 7–8).
 - **Ortam bazlı veritabanı seçimi:** `config/settings.py`, `DATABASE_URL` tanımlıysa Supabase/Postgres'e (transaction pooler, port 6543, `DISABLE_SERVER_SIDE_CURSORS=True`) bağlanır; tanımlı değilse SQLite'a düşer. Migration'lar prod'da Vercel build'inde değil, yerelden (session pooler/direkt bağlantı, port 5432) çalıştırılır (bölüm 10).
-- **Fazlı geliştirme kuralı:** Bu dosyanın asıl amacı bölüm 12'deki fazları sırayla uygulamaktır — bir faz bitmeden sonrakine geçilmez, her fazın sonunda ilgili "Kabul kriterleri" tek tek doğrulanır. Şu an **Faz 5 tamamlandı** (Supabase + Vercel'e yayın); prototip canlıda. Faz 6'dan "anket bitiş süresi" ve "arama/kategoriler" eklendi (bkz. bölüm 12); listedeki diğer maddeler ihtiyaca göre seçilecek. **Prod dağıtım durumu ve kritik tuzaklar için bölüm 10.1'i mutlaka oku.**
+- **Fazlı geliştirme kuralı:** Bu dosyanın asıl amacı bölüm 12'deki fazları sırayla uygulamaktır — bir faz bitmeden sonrakine geçilmez, her fazın sonunda ilgili "Kabul kriterleri" tek tek doğrulanır. **Faz 0–5 tamamlandı**, prototip canlıda. Faz 6'dan şu ana kadar yapılanlar: anket bitiş süresi, arama/kategoriler, oy değiştirme, misafir oyunu hesaba bağlama, parola sıfırlama (Resend), hız sınırı — tam liste ve işaretli kutular için bölüm 12'nin sonundaki "Faz 6" listesine bak. Ayrıca Faz 6 dışında, kullanıcı isteğiyle yapılan iki ek iş var: **güvenlik incelemesi** (bir code-review skill'iyle tarandı, bulunan 6 bulgunun hepsi düzeltildi — voter_id çerezi doğrulaması, parola benzerlik kontrolü, kayıt yarış durumu, SECRET_KEY/DEBUG güvensiz varsayılanları, Türkçe İ karakteri, hız sınırı) ve **görsel/UX yenilemesi** (önce `kararsizim.vercel.app` referans alınarak tam bir renk/tipografi değişimi, sonra glassmorphism + aurora arka plan + mikro-animasyonlar, ayrıca public GitHub'a almadan önce sızan sabit bir demo parolasının temizlenmesi). **Prod dağıtım durumu ve kritik tuzaklar için bölüm 10.1'i mutlaka oku.**
 - **Oy verme görünümü context'e göre dallanır:** `templates/partials/poll_options.html`, hepsi tek bir `.poll-vote-area` sarmalayıcısı içinde olmak üzere üç moddan birini render eder — `poll.show_results` doluysa sonuç satırları (`interactive` ve `poll.can_vote` ikisi de doğruysa — yani detay sayfasında ve anket kapalı değilse — her satır tıklanabilir bir oy formudur: ilk oy da, oy **değiştirme** de aynı uca gider; aksi halde salt okunur `role=progressbar` satırı), değilse (`show_results` boş) `interactive` context değişkenine bakılır: `True` ise aktif oy formu (sadece `polls/detail.html` bunu `{% include ... with interactive=True %}` ile geçiyor), yoksa (ana sayfa/profil) nötr/yüzdesiz önizleme barı. **`static/js/main.js`'teki `renderPollResults` bu yapıyı DOM'da yeniden üretir** (her AJAX oy/değişiklik sonrası `.poll-vote-area`'nın içeriği komple değiştirilir) — şablondaki ARIA attribute'ları ve tıklanabilirlik mantığı (`data.is_closed`, `container.dataset.voteUrl`) burada da birebir olmalı; biri değişince diğerini güncellemeyi unutma (bir kez unutulup sonradan fark edilip düzeltildi).
 - **Static dosya önbellek kırma (prod):** `STORAGES["staticfiles"]`, `DEBUG=False` iken `ManifestStaticFilesStorage` kullanır — `collectstatic` her dosyayı içerik hash'iyle yeniden adlandırır (`main.a1b2c3.js`), `{% static %}` etiketi otomatik doğru adı çözer. Bu sayede bir deploy'da JS/CSS değişince tarayıcılar eski sürümü önbellekten kullanmaya devam etmez. Yerelde (`DEBUG=True`) düz `StaticFilesStorage` kullanılır, `collectstatic` çalıştırmaya gerek yok.
 
@@ -97,33 +97,40 @@ python-dotenv
 ```
 kararsizim/
 ├── CLAUDE.md
-├── README.md
+├── README.md                # Public repo için: tanıtım, ekran görüntüsü, kurulum
 ├── requirements.txt
 ├── .env.example
 ├── .gitignore
 ├── manage.py
-├── config/                 # Django proje ayarları
+├── docs/
+│   └── screenshot.jpg       # README'de kullanılan ana sayfa görseli
+├── config/                  # Django proje ayarları
 │   ├── __init__.py
 │   ├── settings.py
 │   ├── urls.py
-│   └── wsgi.py             # Standart Django WSGI dosyası (Vercel bunu otomatik tanır)
-├── accounts/               # Kullanıcı modeli, kayıt, giriş, çıkış, profil
+│   ├── ratelimit.py         # Cache tabanlı hız sınırı decorator'ı (rate_limit())
+│   └── wsgi.py              # Standart Django WSGI dosyası (Vercel bunu otomatik tanır)
+├── accounts/                # Kullanıcı modeli, kayıt, giriş, çıkış, parola sıfırlama
 │   ├── models.py
 │   ├── forms.py
 │   ├── views.py
 │   ├── urls.py
 │   └── admin.py
-├── polls/                  # Anket, seçenek, oy
+├── polls/                   # Anket, seçenek, oy
 │   ├── models.py
 │   ├── forms.py
 │   ├── views.py
 │   ├── urls.py
 │   ├── admin.py
+│   ├── middleware.py        # VoterIDMiddleware (misafir voter_id çerezi)
+│   ├── signals.py           # user_logged_in → misafir oylarını hesaba taşı
+│   ├── management/commands/
+│   │   └── seed_demo_content.py  # Örnek kullanıcı/anket/oy üretir (web'den erişilmez, elle çalıştırılır)
 │   └── tests.py
 ├── templates/
 │   ├── base.html
-│   ├── partials/           # navbar, poll_card, mesajlar vb.
-│   ├── accounts/
+│   ├── partials/            # navbar, poll_card, poll_options, mesajlar vb.
+│   ├── accounts/            # login, register, password_reset_* (5 şablon)
 │   └── polls/
 └── static/
     ├── css/style.css
@@ -157,6 +164,8 @@ kararsizim/
 | `author` | FK → User | `on_delete=CASCADE`, `related_name="polls"` |
 | `question` | CharField(200) | Zorunlu, en az 5 karakter |
 | `description` | TextField | Opsiyonel, en fazla 500 karakter |
+| `category` | CharField(20) | `CATEGORY_CHOICES` (genel/yemek/eglence/alisveris/teknoloji/spor), varsayılan `genel` |
+| `expires_at` | DateTimeField | Opsiyonel; doluysa ve geçmişteyse anket kapalı (`poll.is_closed` property) |
 | `created_at` | DateTimeField | `auto_now_add=True`, varsayılan sıralama: yeniden eskiye |
 
 ### 4.3 `polls.Option`
@@ -241,11 +250,13 @@ kararsizim/
       {"option_id": 1, "text": "Sinema", "votes": 15, "percent": 62},
       {"option_id": 2, "text": "Restoran", "votes": 9, "percent": 38}
     ],
-    "voted_option_id": 1
+    "voted_option_id": 1,
+    "status_label": "Karar net",
+    "is_closed": false
   }
   ```
-- Hata durumları: zaten oy verilmiş → `409`, geçersiz seçenek → `400`. Kullanıcıya kısa bir Türkçe mesaj gösterilir.
-- Başarılı yanıtta butonlar sonuç çubuklarına **animasyonla** dönüşür (genişlik 0'dan yüzdeye), seçilen seçenek vurgulanır.
+- Oy artık **değiştirilebilir** (bkz. bölüm 5 kural 1): aynı kullanıcı/misafir tekrar oy verirse `200` döner, var olan `Vote` satırı güncellenir — `409` sadece anket **kapalıyken** oy verilmeye çalışılırsa döner. Geçersiz seçenek → `400`, çok fazla istek → `429` (bkz. `config/ratelimit.py`). Kullanıcıya kısa bir Türkçe mesaj gösterilir.
+- Başarılı yanıtta `renderPollResults` (`static/js/main.js`) tüm sonuç alanını (`.poll-vote-area`) yeniden çiziyor; anket kapalı değilse her satır yine tıklanabilir kalır (ki tekrar oy değiştirilebilsin), kapalıysa salt okunur. Ayrıca `burstConfetti` ile tıklanan seçeneğin renginde küçük bir konfeti animasyonu oynatılıyor.
 - JavaScript kapalıysa form normal POST ile çalışmalı ve sayfaya yönlendirmeli (progressive enhancement).
 
 ## 8. Anket Oluşturma Formu (JavaScript)
@@ -328,6 +339,12 @@ DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1,.vercel.app
 CSRF_TRUSTED_ORIGINS=https://*.vercel.app
 DATABASE_URL=postgresql://postgres.[proje-ref]:[parola]@aws-0-[bolge].pooler.supabase.com:6543/postgres
+
+# Parola sıfırlama e-postaları (opsiyonel, boşsa yerelde konsola yazdırılır — aşağıdaki
+# "E-posta" bölümüne bak):
+# EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+# EMAIL_HOST_PASSWORD=re_xxx
+# DEFAULT_FROM_EMAIL=Kararsızım <onboarding@resend.dev>
 ```
 - `.env` asla commit edilmez (`.gitignore`'a ekle).
 - Yerelde `DATABASE_URL` yoksa SQLite'a düş (geliştirme kolaylığı).
@@ -366,7 +383,10 @@ DATABASE_URL=postgresql://postgres.[proje-ref]:[parola]@aws-0-[bolge].pooler.sup
 - Tüm POST formlarında CSRF koruması; fetch isteklerinde `X-CSRFToken`.
 - Kullanıcı girdisi şablonlarda otomatik escape edilir; `|safe` kullanılmaz.
 - Silme işlemi yalnızca sahibine; başkası denerse `403`.
-- Django'nun parola doğrulayıcıları açık (en az 8 karakter).
+- Django'nun parola doğrulayıcıları açık (en az 8 karakter); kayıt formu parolanın kullanıcı adı/e-posta ile aynı olmasını da engeller (`UserAttributeSimilarityValidator`, `accounts/forms.py: RegistrationForm._post_clean`).
+- Giriş/kayıt/parola-sıfırlama/oy/anket-açma uçlarında hız sınırı (`config/ratelimit.py: rate_limit()`), sadece POST'u sayar — GET (sayfayı görüntülemek) hiçbir zaman sınırlanmaz.
+- Misafir `voter_id` çerezi middleware'de doğrulanır (`uuid.UUID(...)`); bozuk/sahte bir değer sessizce yeni bir UUID'yle değiştirilir, hataya düşmez.
+- `SECRET_KEY`, `DEBUG=False` iken ortam değişkeninden gelmezse `ImproperlyConfigured` fırlatır — koddaki güvensiz varsayılan değere sessizce düşmez.
 - Özel hata sayfaları: `templates/404.html`, `templates/403.html` (sitenin tasarımıyla, `base.html` üzerinden) ve `templates/500.html` (**bağımsız**, context'e/`base.html`'e güvenmeden, inline CSS — 500 anında context processor'ların kendisi patlamış olabilir). `DEBUG=False` iken Django bunları otomatik kullanır, ekstra view/URL tanımı gerekmez.
 
 ---
