@@ -218,6 +218,8 @@ kararsizim/
 | `/kayit/` | Kayıt: kullanıcı adı, e-posta, parola, parola tekrar | Misafirler |
 | `/giris/` | Giriş: e-posta + parola | Misafirler |
 | `/cikis/` | Çıkış (POST) | Üyeler |
+| `/parola-sifirla/` | Parola sıfırlama isteği (e-posta gir) | Herkes |
+| `/parola-sifirla/<uidb64>/<token>/` | Sıfırlama bağlantısı → yeni parola formu | Herkes (geçerli token ile) |
 | `/admin/` | Django admin | Süper kullanıcı |
 
 **Navbar:** Logo "Kararsızım" · "Anket Aç" butonu (misafirse giriş sayfasına götürür) · Giriş/Kayıt veya kullanıcı adı + Çıkış.
@@ -318,6 +320,10 @@ DATABASE_URL=postgresql://postgres.[proje-ref]:[parola]@aws-0-[bolge].pooler.sup
 ```
 - `.env` asla commit edilmez (`.gitignore`'a ekle).
 - Yerelde `DATABASE_URL` yoksa SQLite'a düş (geliştirme kolaylığı).
+
+### E-posta (parola sıfırlama)
+- `EMAIL_BACKEND` tanımlı değilse Django'nun konsol backend'i kullanılır — yerelde e-posta gerçekten gönderilmez, `runserver` çıktısına yazdırılır.
+- Prod'da **Resend**'in SMTP relay'i kullanılıyor: `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, `EMAIL_HOST=smtp.resend.com` (varsayılan), `EMAIL_HOST_USER=resend` (varsayılan), `EMAIL_HOST_PASSWORD=<Resend API anahtarı>`. Resend'de alan adı doğrulanmadıysa `DEFAULT_FROM_EMAIL` sadece hesap sahibinin kendi doğrulanmış adresine gönderebilir (sandbox kısıtı) — gerçek kullanıcılara göndermek için Resend panelinden bir alan adı doğrulanmalı.
 
 ### Supabase bağlantı notları
 - Vercel serverless olduğu için Supabase'in **pooler (transaction mode, port 6543)** bağlantı adresi kullanılır.
@@ -420,9 +426,9 @@ Her faz için aşağıdaki promptu Claude Code'a yapıştırabilirsin.
 - [x] Anket bitiş süresi ("24 saat sonra kapanır") ve kapanmış anket rozeti
 - [x] Arama ve kategoriler/etiketler (yemek, eğlence, alışveriş…)
 - Anket paylaşım linki ve Open Graph önizlemesi
-- Kötüye kullanım önlemleri: oy ve anket açma için hız sınırı, IP hash, raporlama butonu
+- [x] Kötüye kullanım önlemleri: oy ve anket açma için hız sınırı (`config/ratelimit.py`). IP hash ve raporlama butonu hâlâ yok.
 - Misafir oyunu giriş sonrası hesaba bağlama
-- Parola sıfırlama (e-posta gönderimi)
+- [x] Parola sıfırlama (Resend SMTP ile e-posta gönderimi, bkz. bölüm 10)
 - Karanlık mod
 - Yorumlar ("Ben olsam sinemaya giderdim çünkü…")
 

@@ -21,6 +21,7 @@
     <input type="hidden" name="next" value="{{ next }}">
     <button type="submit" class="btn btn-primary">Giriş Yap</button>
 </form>
+<p class="form-footnote"><a href="{% url 'accounts:password_reset' %}">Parolanı mı unuttun?</a></p>
 <p class="form-footnote">Hesabın yok mu? <a href="{% url 'accounts:register' %}">Kayıt ol</a></p>
 </div>
 {% endblock %}

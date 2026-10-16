@@ -155,6 +155,25 @@ LOGIN_REDIRECT_URL = "polls:home"
 LOGOUT_REDIRECT_URL = "polls:home"
 
 
+# E-posta (parola sıfırlama bağlantıları için)
+# Varsayılan: konsol backend — yerelde e-posta gerçekten gönderilmez, runserver
+# çıktısına yazdırılır. Prod'da EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+# ve Resend'in SMTP bilgileri (host: smtp.resend.com, user: resend,
+# password: Resend API anahtarı) ortam değişkeni olarak verilmeli.
+
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.resend.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "resend")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL", "Kararsızım <onboarding@resend.dev>"
+)
+
+
 # Production security settings (only active when DEBUG=False)
 
 if not DEBUG:
