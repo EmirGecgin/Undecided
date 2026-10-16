@@ -188,6 +188,7 @@ kararsizim/
   - `httponly=True`, `samesite="Lax"`, `secure=True` (prod'da), ömür: 1 yıl.
 - Giriş yapmış kullanıcı oy verirse `user` alanı dolar; yapmamışsa `voter_token` = çerezdeki UUID.
 - Bu bir prototip korumasıdır; çerezi silen biri tekrar oy verebilir. Bu bilinçli bir tercih — daha sıkı koruma Faz 6'da.
+- **Misafir oyu → hesap bağlama:** `polls/signals.py`, Django'nun `user_logged_in` sinyaline bağlı (`polls/apps.py: ready()`); hem `LoginView` hem `register()`'daki otomatik login bu sinyali tetikler. Giriş anında, o tarayıcının `voter_id` çerezine ait tüm misafir oyları (`voter_token` dolu, `user` boş) giriş yapan kullanıcıya taşınır. Kullanıcının o ankete zaten üye olarak oyu varsa (başka bir cihazdan), misafir oyu çakışma yaratmadan silinir.
 
 ---
 
@@ -427,7 +428,7 @@ Her faz için aşağıdaki promptu Claude Code'a yapıştırabilirsin.
 - [x] Arama ve kategoriler/etiketler (yemek, eğlence, alışveriş…)
 - Anket paylaşım linki ve Open Graph önizlemesi
 - [x] Kötüye kullanım önlemleri: oy ve anket açma için hız sınırı (`config/ratelimit.py`). IP hash ve raporlama butonu hâlâ yok.
-- Misafir oyunu giriş sonrası hesaba bağlama
+- [x] Misafir oyunu giriş sonrası hesaba bağlama
 - [x] Parola sıfırlama (Resend SMTP ile e-posta gönderimi, bkz. bölüm 10)
 - Karanlık mod
 - Yorumlar ("Ben olsam sinemaya giderdim çünkü…")

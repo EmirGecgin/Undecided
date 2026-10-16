@@ -478,3 +478,74 @@ class RateLimitTests(TestCase):
         self.assertEqual(dummy_view(self._request("1.1.1.1")).status_code, 200)
         self.assertEqual(dummy_view(self._request("2.2.2.2")).status_code, 200)
         self.assertEqual(dummy_view(self._request("1.1.1.1")).status_code, 429)
+
+
+class GuestVoteMigrationTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.owner = User.objects.create_user(
+            username="sahipkullanici", email="sahip@example.com", password=VALID_PASSWORD
+        )
+        self.poll = Poll.objects.create(author=self.owner, question=VALID_QUESTION)
+        self.option_a = Option.objects.create(poll=self.poll, text="A", order=0)
+        self.option_b = Option.objects.create(poll=self.poll, text="B", order=1)
+
+    def _guest_vote(self, option):
+        return self.client.post(
+            reverse("polls:vote", args=[self.poll.pk]),
+            {"option_id": option.pk},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+    def _login(self, email):
+        return self.client.post(
+            reverse("accounts:login"), {"username": email, "password": VALID_PASSWORD}
+        )
+
+    def test_guest_vote_migrates_to_account_on_login(self):
+        self._guest_vote(self.option_a)
+        guest_vote = Vote.objects.get(poll=self.poll)
+        self.assertIsNone(guest_vote.user)
+        self.assertIsNotNone(guest_vote.voter_token)
+
+        member = User.objects.create_user(
+            username="uyeolan", email="uye@example.com", password=VALID_PASSWORD
+        )
+        self._login("uye@example.com")
+
+        guest_vote.refresh_from_db()
+        self.assertEqual(guest_vote.user_id, member.id)
+        self.assertIsNone(guest_vote.voter_token)
+        self.assertEqual(Vote.objects.filter(poll=self.poll).count(), 1)
+
+    def test_guest_vote_dropped_if_account_already_voted_elsewhere(self):
+        member = User.objects.create_user(
+            username="uyeolan", email="uye@example.com", password=VALID_PASSWORD
+        )
+        Vote.objects.create(poll=self.poll, option=self.option_b, user=member)
+
+        self._guest_vote(self.option_a)
+        self.assertEqual(Vote.objects.filter(poll=self.poll).count(), 2)
+
+        self._login("uye@example.com")
+
+        votes = Vote.objects.filter(poll=self.poll)
+        self.assertEqual(votes.count(), 1)
+        self.assertEqual(votes.first().option_id, self.option_b.pk)
+
+    def test_guest_vote_migrates_on_registration_too(self):
+        self._guest_vote(self.option_a)
+
+        self.client.post(
+            reverse("accounts:register"),
+            {
+                "username": "tazekullanici",
+                "email": "taze@example.com",
+                "password1": VALID_PASSWORD,
+                "password2": VALID_PASSWORD,
+            },
+        )
+
+        vote = Vote.objects.get(poll=self.poll)
+        self.assertEqual(vote.user.username, "tazekullanici")
+        self.assertIsNone(vote.voter_token)
