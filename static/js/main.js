@@ -176,6 +176,40 @@ function renderPollResults(container, data) {
     });
 }
 
+function burstConfetti(originEl) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!originEl) return;
+
+    var rect = originEl.getBoundingClientRect();
+    var colors = [
+        "var(--opt-1)",
+        "var(--opt-2)",
+        "var(--opt-3)",
+        "var(--opt-4)",
+        "var(--opt-5)",
+    ];
+    var count = 14;
+
+    for (var i = 0; i < count; i++) {
+        var piece = document.createElement("span");
+        piece.className = "confetti-piece";
+        piece.style.left = rect.left + rect.width / 2 + "px";
+        piece.style.top = rect.top + rect.height / 2 + "px";
+        piece.style.background = colors[i % colors.length];
+
+        var angle = (Math.PI * 2 * i) / count + (Math.random() * 0.6 - 0.3);
+        var distance = 60 + Math.random() * 50;
+        piece.style.setProperty("--dx", Math.cos(angle) * distance + "px");
+        piece.style.setProperty("--dy", Math.sin(angle) * distance - 20 + "px");
+        piece.style.setProperty("--rot", Math.random() * 360 + "deg");
+
+        document.body.appendChild(piece);
+        piece.addEventListener("animationend", function () {
+            this.remove();
+        });
+    }
+}
+
 function setupVoteForms() {
     document.addEventListener("submit", function (event) {
         var form = event.target;
@@ -199,6 +233,9 @@ function setupVoteForms() {
                 });
             })
             .then(function (result) {
+                if (result.data.ok) {
+                    burstConfetti(form);
+                }
                 if (result.data.ok || result.status === 409) {
                     renderPollResults(container, result.data);
                 }

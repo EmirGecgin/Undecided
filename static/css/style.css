@@ -25,7 +25,10 @@
 
     --radius: 16px;
     --radius-sm: 10px;
-    --shadow: 0 1px 2px rgba(21, 19, 42, 0.04), 0 10px 24px rgba(21, 19, 42, 0.05);
+    --shadow: 0 1px 2px rgba(91, 79, 232, 0.05), 0 10px 30px rgba(91, 79, 232, 0.10);
+    --shadow-lg: 0 8px 16px rgba(91, 79, 232, 0.08), 0 28px 48px rgba(91, 79, 232, 0.18);
+    --glass-bg: rgba(255, 255, 255, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.7);
 
     --font-sans: "Space Grotesk", system-ui, -apple-system, sans-serif;
     --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -48,6 +51,39 @@ body {
     font-family: var(--font-sans);
     font-size: 16px;
     line-height: 1.5;
+    position: relative;
+    min-height: 100vh;
+}
+
+/* Soft drifting color blobs behind the content — gives the flat background
+   depth without needing an image asset or a build step. */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+        radial-gradient(640px circle at 12% 8%, rgba(91, 79, 232, 0.16), transparent 60%),
+        radial-gradient(560px circle at 88% 14%, rgba(240, 57, 122, 0.12), transparent 60%),
+        radial-gradient(600px circle at 25% 95%, rgba(17, 201, 142, 0.12), transparent 60%),
+        radial-gradient(520px circle at 92% 90%, rgba(255, 178, 36, 0.12), transparent 60%);
+    animation: aurora-drift 28s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+
+@keyframes aurora-drift {
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+        transform: translate3d(-2%, 2%, 0) scale(1.08);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::before {
+        animation: none;
+    }
 }
 
 h1 {
@@ -149,14 +185,19 @@ select:focus-visible {
 /* Navbar */
 
 .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 200;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
     padding: 16px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border-bottom: 1px solid var(--glass-border);
 }
 
 .navbar-logo {
@@ -211,28 +252,30 @@ select:focus-visible {
     color: var(--text);
     cursor: pointer;
     text-decoration: none;
-    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn:hover {
     border-color: var(--primary);
     text-decoration: none;
+    transform: translateY(-1px);
 }
 
 .btn:active {
-    transform: scale(0.98);
+    transform: translateY(0) scale(0.97);
 }
 
 .btn-primary {
-    background: var(--primary);
-    border-color: var(--primary);
+    background: linear-gradient(135deg, var(--primary), #7C6FF0);
+    border-color: transparent;
     color: white;
     font-weight: 600;
+    box-shadow: 0 4px 14px rgba(91, 79, 232, 0.35);
 }
 
 .btn-primary:hover {
-    background: var(--primary-hover);
-    border-color: var(--primary-hover);
+    background: linear-gradient(135deg, var(--primary-hover), var(--primary));
+    box-shadow: 0 8px 22px rgba(91, 79, 232, 0.45);
 }
 
 .btn-danger {
@@ -255,11 +298,12 @@ select:focus-visible {
     width: 32px;
     height: 32px;
     border-radius: 9px;
-    background: var(--primary-tint);
-    color: var(--primary);
+    background: linear-gradient(135deg, var(--primary), var(--opt-2));
+    color: white;
     font-weight: 700;
     font-size: 14px;
     flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(91, 79, 232, 0.3);
 }
 
 .avatar-lg {
@@ -434,8 +478,10 @@ select:focus-visible {
 /* Poll cards */
 
 .poll-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid var(--glass-border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     padding: 24px;
@@ -444,6 +490,37 @@ select:focus-visible {
 
 .poll-grid .poll-card {
     margin-bottom: 0;
+    animation: card-in 0.5s ease backwards;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.poll-grid .poll-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.poll-grid .poll-card:nth-child(1) { animation-delay: 0.02s; }
+.poll-grid .poll-card:nth-child(2) { animation-delay: 0.07s; }
+.poll-grid .poll-card:nth-child(3) { animation-delay: 0.12s; }
+.poll-grid .poll-card:nth-child(4) { animation-delay: 0.17s; }
+.poll-grid .poll-card:nth-child(5) { animation-delay: 0.22s; }
+.poll-grid .poll-card:nth-child(6) { animation-delay: 0.27s; }
+
+@keyframes card-in {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .poll-grid .poll-card {
+        animation: none;
+    }
 }
 
 .poll-detail {
@@ -543,6 +620,48 @@ select:focus-visible {
     font-size: 14px;
     color: var(--text);
     margin: 0 0 10px;
+    animation: label-pop 0.35s ease;
+}
+
+@keyframes label-pop {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .poll-card .poll-status-label,
+    .poll-detail .poll-status-label {
+        animation: none;
+    }
+}
+
+/* Confetti burst on a successful vote (JS-driven, see main.js burstConfetti) */
+
+.confetti-piece {
+    position: fixed;
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 3000;
+    animation: confetti-burst 0.7s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}
+
+@keyframes confetti-burst {
+    from {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+    }
+    to {
+        transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+        opacity: 0;
+    }
 }
 
 .poll-options {
@@ -645,8 +764,10 @@ button.poll-result:hover {
 /* Forms */
 
 .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid var(--glass-border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     padding: 24px;

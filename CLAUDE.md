@@ -260,8 +260,8 @@ kararsizim/
 
 ## 9. Tasarım Rehberi
 
-**Hedef kitle:** Gençler. **His:** Modern, sade, teknik — düz renkler, ağır gölge yok, bol boşluk.
-**Ana fikir:** Açık lavanta arka plan + beyaz kartlar, canlı ama dengeli bir aksan paleti; büyük/kalın başlıklar, sayısal/meta bilgiler monospace fontla ayrışır. Bu yön, `https://kararsizim.vercel.app` referans alınarak ama daha rafine bir palet ve tipografiyle (Faz 6 sonrası bir oturumda) uygulandı — eski sıcak krem/mor palet (Plus Jakarta Sans) tamamen bunun yerini aldı.
+**Hedef kitle:** Gençler. **His:** Modern, "yeni nesil ürün" hissi — cam efektli (glassmorphism) kartlar, yumuşak aurora arka plan, mikro-animasyonlar. Ağır/karmaşık değil; tek bir framework/build adımı eklemeden saf CSS+JS ile elde edildi.
+**Ana fikir:** Açık lavanta arka plan üzerinde yavaşça kayan bulanık renkli "aurora" lekeleri (`body::before`), kartlar yarı saydam + `backdrop-filter: blur()` (glassmorphism); canlı ama dengeli bir aksan paleti; büyük/kalın başlıklar, sayısal/meta bilgiler monospace fontla ayrışır. Bu yön, `https://kararsizim.vercel.app` referans alınarak ama daha rafine bir palet ve tipografiyle (Faz 6 sonrası bir oturumda) uygulandı — eski sıcak krem/mor palet (Plus Jakarta Sans) tamamen bunun yerini aldı; sonraki bir oturumda kullanıcı "çok sade, daha modern/şık olsun" isteyince glassmorphism + aurora arka plan + mikro-animasyonlar (bkz. aşağıdaki "Mikro-animasyonlar" bölümü) eklendi.
 
 ### Renk paleti (CSS değişkenleri, `:root` içinde)
 ```css
@@ -307,6 +307,15 @@ kararsizim/
 - **Mobil öncelikli** tasarım; mobilde tek sütun, ana sayfada 640px üzerinde kartlar 2 sütun.
 - **Erişilebilirlik**: yeterli kontrast, odak (focus) halkaları görünür (`select` dahil), butonlar gerçek `<button>`. Skip link (`.skip-link`, `#main-content`, `top: -80px` ile tamamen ekran dışı). Sonuç satırları `role="progressbar"` + `aria-valuenow/min/max` ile duyuruluyor (birleşik `poll-chart` segmentleri salt dekoratif, `aria-hidden="true"`); seçili seçenek rengin yanında metinle de ("✓") belirtiliyor — bilgi asla sadece renge dayanmamalı (renk körlüğü). Toast mesajları `role="status" aria-live="polite"`. Dekoratif emojiler `aria-hidden="true"`. Aktif sekme/kategori `aria-current`.
 - **ARIA/yapı senkronizasyonu:** `templates/partials/poll_options.html` ile `static/js/main.js`teki `renderPollResults` birebir aynı DOM yapısını (poll-chart + durum etiketi + poll-results) üretir; birini değiştirince diğerini güncellemeyi unutma (bkz. dosyanın başındaki mimari özet notu).
+
+### Mikro-animasyonlar ve glassmorphism (son oturumda eklendi)
+- **Aurora arka plan:** `body::before`, sabit konumlu (`position: fixed`), 4 bulanık `radial-gradient` lekesinden oluşan, 28 saniyede bir yönünü değiştiren çok yavaş bir `translate/scale` animasyonuyla (`aurora-drift`) kayan dekoratif katman. `z-index: -1`, tıklamaları engellemez.
+- **Glassmorphism:** `.poll-card`, `.card` ve `.navbar` artık `var(--glass-bg)` (yarı saydam beyaz) + `backdrop-filter: blur(16px) saturate(160%)` kullanıyor; navbar ayrıca `position: sticky`. `--shadow`/`--shadow-lg` indigo tonlu (nötr siyah değil).
+- **Kart giriş animasyonu:** `.poll-grid .poll-card` sayfa yüklenince `card-in` keyframe'iyle (opacity+translateY) içeri süzülüyor, ilk 6 kart için `nth-child` ile kademeli gecikme var. Hover'da kart hafifçe yukarı kalkıyor (`translateY(-4px)` + `--shadow-lg`).
+- **Durum etiketi** (`poll.status_label`) göründüğünde `label-pop` ile hafif büyüyerek beliriyor.
+- **Konfeti:** Oy verme/değiştirme başarılı olunca (`static/js/main.js: burstConfetti`), tıklanan butonun üzerinden `--opt-N` renklerinde küçük parçacıklar saçılıyor (saf DOM+CSS keyframe, kütüphane yok). `setupVoteForms`'ta `renderPollResults` çağrılmadan **önce** tetiklenir, çünkü `renderPollResults` orijinal butonu DOM'dan kaldırıyor (`getBoundingClientRect()` o an, buton hâlâ DOM'dayken alınmalı).
+- **Avatar** artık düz tint değil, `--primary`→`--opt-2` gradient + beyaz yazı.
+- **`prefers-reduced-motion: reduce`** saygı görüyor: aurora, kart giriş animasyonu ve durum etiketi animasyonu kapanıyor; konfeti JS tarafında `window.matchMedia` ile tamamen atlanıyor (DOM'a hiç eklenmiyor).
 
 ---
 
