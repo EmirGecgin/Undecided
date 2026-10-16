@@ -55,7 +55,9 @@ function getCookie(name) {
 }
 
 function renderPollResults(container, data) {
-    var optionsWrapper = container.querySelector(".poll-options");
+    var area = container.querySelector(".poll-vote-area");
+    var voteUrl = container.dataset.voteUrl;
+    var canChangeVote = !data.is_closed && !!voteUrl;
 
     var chart = document.createElement("div");
     chart.className = "poll-chart";
@@ -81,39 +83,80 @@ function renderPollResults(container, data) {
 
     data.results.forEach(function (result, index) {
         var isSelected = result.option_id === data.voted_option_id;
+        var label = result.text + " — %" + result.percent + " (" + result.votes + ")" + (isSelected ? " ✓" : "");
+
         var li = document.createElement("li");
-        li.className = "poll-result" + (isSelected ? " selected" : "");
-        li.dataset.optionId = result.option_id;
         li.dataset.order = index;
-        li.setAttribute("role", "progressbar");
-        li.setAttribute("aria-valuenow", result.percent);
-        li.setAttribute("aria-valuemin", "0");
-        li.setAttribute("aria-valuemax", "100");
-        li.setAttribute(
-            "aria-label",
-            result.text + ": yüzde " + result.percent + ", " + result.votes + " oy" + (isSelected ? ", senin seçimin" : "")
-        );
 
-        var bar = document.createElement("span");
-        bar.className = "poll-result-bar";
-        bar.style.width = "0%";
-        bar.setAttribute("aria-hidden", "true");
+        if (canChangeVote) {
+            var form = document.createElement("form");
+            form.method = "post";
+            form.action = voteUrl;
+            form.className = "vote-form";
 
-        var label = document.createElement("span");
-        label.className = "poll-result-label";
-        label.setAttribute("aria-hidden", "true");
-        label.textContent = result.text + " — %" + result.percent + " (" + result.votes + ")" + (isSelected ? " ✓" : "");
+            var optionInput = document.createElement("input");
+            optionInput.type = "hidden";
+            optionInput.name = "option_id";
+            optionInput.value = result.option_id;
+            form.appendChild(optionInput);
 
-        li.appendChild(bar);
-        li.appendChild(label);
+            var button = document.createElement("button");
+            button.type = "submit";
+            button.className = "poll-result" + (isSelected ? " selected" : "");
+            button.setAttribute(
+                "aria-label",
+                result.text + ": yüzde " + result.percent + ", " + result.votes + " oy" +
+                    (isSelected ? ", senin geçerli oyun. Oy vermiştin." : ". Oyunu buna değiştirmek için tıkla.")
+            );
+
+            var buttonBar = document.createElement("span");
+            buttonBar.className = "poll-result-bar";
+            buttonBar.style.width = "0%";
+            buttonBar.setAttribute("aria-hidden", "true");
+
+            var buttonLabel = document.createElement("span");
+            buttonLabel.className = "poll-result-label";
+            buttonLabel.setAttribute("aria-hidden", "true");
+            buttonLabel.textContent = label;
+
+            button.appendChild(buttonBar);
+            button.appendChild(buttonLabel);
+            form.appendChild(button);
+            li.appendChild(form);
+        } else {
+            li.className = "poll-result" + (isSelected ? " selected" : "");
+            li.dataset.optionId = result.option_id;
+            li.setAttribute("role", "progressbar");
+            li.setAttribute("aria-valuenow", result.percent);
+            li.setAttribute("aria-valuemin", "0");
+            li.setAttribute("aria-valuemax", "100");
+            li.setAttribute(
+                "aria-label",
+                result.text + ": yüzde " + result.percent + ", " + result.votes + " oy" + (isSelected ? ", senin seçimin" : "")
+            );
+
+            var bar = document.createElement("span");
+            bar.className = "poll-result-bar";
+            bar.style.width = "0%";
+            bar.setAttribute("aria-hidden", "true");
+
+            var staticLabel = document.createElement("span");
+            staticLabel.className = "poll-result-label";
+            staticLabel.setAttribute("aria-hidden", "true");
+            staticLabel.textContent = label;
+
+            li.appendChild(bar);
+            li.appendChild(staticLabel);
+        }
+
         ul.appendChild(li);
     });
 
-    if (optionsWrapper) {
-        var nodes = [chart];
-        if (statusLabel) nodes.push(statusLabel);
-        nodes.push(ul);
-        optionsWrapper.replaceWith.apply(optionsWrapper, nodes);
+    if (area) {
+        area.innerHTML = "";
+        area.appendChild(chart);
+        if (statusLabel) area.appendChild(statusLabel);
+        area.appendChild(ul);
     }
 
     var countEl = container.querySelector(".poll-vote-count");

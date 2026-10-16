@@ -246,7 +246,7 @@ class VoteViewTests(TestCase):
             **kwargs,
         )
 
-    def test_guest_can_vote_once_then_blocked(self):
+    def test_guest_can_change_vote(self):
         response = self._vote(self.option_a)
         data = response.json()
         self.assertTrue(data["ok"])
@@ -254,19 +254,32 @@ class VoteViewTests(TestCase):
         self.assertEqual(data["voted_option_id"], self.option_a.pk)
 
         response2 = self._vote(self.option_b)
-        self.assertEqual(response2.status_code, 409)
+        self.assertEqual(response2.status_code, 200)
         data2 = response2.json()
-        self.assertFalse(data2["ok"])
-        self.assertEqual(data2["voted_option_id"], self.option_a.pk)
+        self.assertTrue(data2["ok"])
+        self.assertEqual(data2["voted_option_id"], self.option_b.pk)
+        self.assertEqual(data2["total_votes"], 1)
         self.assertEqual(Vote.objects.filter(poll=self.poll).count(), 1)
+        self.assertEqual(Vote.objects.get(poll=self.poll).option_id, self.option_b.pk)
 
-    def test_member_can_vote_once_then_blocked(self):
+    def test_member_can_change_vote(self):
         self.client.force_login(self.member)
         response = self._vote(self.option_a)
         self.assertTrue(response.json()["ok"])
 
         response2 = self._vote(self.option_b)
-        self.assertEqual(response2.status_code, 409)
+        self.assertEqual(response2.status_code, 200)
+        self.assertTrue(response2.json()["ok"])
+        self.assertEqual(Vote.objects.filter(poll=self.poll, user=self.member).count(), 1)
+        self.assertEqual(
+            Vote.objects.get(poll=self.poll, user=self.member).option_id, self.option_b.pk
+        )
+
+    def test_revoting_for_same_option_is_a_no_op(self):
+        self.client.force_login(self.member)
+        self._vote(self.option_a)
+        response = self._vote(self.option_a)
+        self.assertTrue(response.json()["ok"])
         self.assertEqual(Vote.objects.filter(poll=self.poll, user=self.member).count(), 1)
 
     def test_percentages_and_counts_are_correct(self):
@@ -322,9 +335,19 @@ class VoteViewTests(TestCase):
             Vote.objects.filter(poll=self.poll, user=self.owner, option=self.option_a).count(), 1
         )
 
-    def test_detail_hides_vote_form_from_owner_after_voting(self):
+    def test_detail_keeps_vote_form_after_voting_so_vote_can_be_changed(self):
         self.client.force_login(self.owner)
         self._vote(self.option_a)
+        response = self.client.get(reverse("polls:detail", args=[self.poll.pk]))
+        self.assertContains(response, "vote-form")
+
+    def test_detail_hides_vote_form_once_poll_is_closed(self):
+        self.client.force_login(self.owner)
+        self._vote(self.option_a)
+
+        self.poll.expires_at = timezone.now() - timedelta(hours=1)
+        self.poll.save(update_fields=["expires_at"])
+
         response = self.client.get(reverse("polls:detail", args=[self.poll.pk]))
         self.assertNotContains(response, "vote-form")
 

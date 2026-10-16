@@ -3,7 +3,7 @@
 {% block title %}{{ poll.question }} — Kararsızım{% endblock %}
 
 {% block content %}
-<article class="poll-card poll-detail" data-poll-id="{{ poll.pk }}">
+<article class="poll-card poll-detail" data-poll-id="{{ poll.pk }}" data-vote-url="{% url 'polls:vote' poll.pk %}">
     {% include "partials/author_byline.html" %}
     {% include "partials/poll_badges.html" %}
     <h1>{{ poll.question }}</h1>

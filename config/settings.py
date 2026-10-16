@@ -141,6 +141,20 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Prod'da static dosya adlarına içerik hash'i eklenir (örn. main.a1b2c3.js) ki bir
+# deploy sonrası tarayıcılar eski CSS/JS'i önbellekten kullanmaya devam etmesin.
+# Yerelde (collectstatic çalıştırılmadığından) düz dosya adlarıyla servis edilir.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+            if DEBUG
+            else "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+        )
+    },
+}
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

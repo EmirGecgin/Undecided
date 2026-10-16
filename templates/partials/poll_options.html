@@ -1,3 +1,4 @@
+<div class="poll-vote-area">
 {% if poll.show_results %}
 <div class="poll-chart" aria-hidden="true">
     {% for option in poll.options.all %}
@@ -12,9 +13,9 @@
         <form method="post" action="{% url 'polls:vote' poll.pk %}" class="vote-form">
             {% csrf_token %}
             <input type="hidden" name="option_id" value="{{ option.id }}">
-            <button type="submit" class="poll-result" aria-label="{{ option.text }}: yüzde {{ option.percent }}, {{ option.vote_count }} oy. Oy vermek için tıkla.">
+            <button type="submit" class="poll-result{% if option.id == poll.voted_option_id %} selected{% endif %}" aria-label="{{ option.text }}: yüzde {{ option.percent }}, {{ option.vote_count }} oy{% if option.id == poll.voted_option_id %}, senin geçerli oyun{% endif %}. {% if option.id == poll.voted_option_id %}Oy vermiştin{% else %}Oyunu buna değiştirmek için tıkla{% endif %}.">
                 <span class="poll-result-bar" style="width: {{ option.percent }}%" aria-hidden="true"></span>
-                <span class="poll-result-label" aria-hidden="true">{{ option.text }} — %{{ option.percent }} ({{ option.vote_count }})</span>
+                <span class="poll-result-label" aria-hidden="true">{{ option.text }} — %{{ option.percent }} ({{ option.vote_count }}){% if option.id == poll.voted_option_id %} ✓{% endif %}</span>
             </button>
         </form>
     </li>
@@ -51,3 +52,4 @@
     {% endfor %}
 </ul>
 {% endif %}
+</div>

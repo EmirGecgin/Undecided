@@ -59,7 +59,7 @@ def _attach_viewer_state(poll, request):
 
     poll.voted_option_id = viewer_vote.option_id if viewer_vote else None
     poll.show_results = bool(viewer_vote) or is_owner or poll.is_closed
-    poll.can_vote = not poll.is_closed and poll.voted_option_id is None
+    poll.can_vote = not poll.is_closed
 
     total = poll.vote_count
     for option in poll.options.all():
@@ -101,6 +101,7 @@ def _build_vote_payload(poll, voted_option_id, ok=True, error=None):
         "results": results,
         "voted_option_id": voted_option_id,
         "status_label": _status_label([r["percent"] for r in results], total_votes),
+        "is_closed": poll.is_closed,
     }
     if error:
         payload["error"] = error
@@ -218,6 +219,19 @@ def vote(request, pk):
         messages.error(request, payload["error"])
         return redirect("polls:detail", pk=poll.pk)
 
+    def respond(voted_option_id):
+        payload = _build_vote_payload(poll, voted_option_id, ok=True)
+        if _is_ajax(request):
+            return JsonResponse(payload)
+        return redirect("polls:detail", pk=poll.pk)
+
+    existing = _existing_vote(poll, request)
+    if existing:
+        if existing.option_id != option.id:
+            existing.option = option
+            existing.save(update_fields=["option"])
+        return respond(option.id)
+
     vote_kwargs = {"poll": poll, "option": option}
     if request.user.is_authenticated:
         vote_kwargs["user"] = request.user
@@ -228,20 +242,18 @@ def vote(request, pk):
         with transaction.atomic():
             Vote.objects.create(**vote_kwargs)
     except IntegrityError:
+        # Eşzamanlı ilk oy yarışı: iki istek aynı anda "henüz oy yok" görüp ikisi de
+        # ekleme denedi, biri kazandı. Artık bir oy var — hata değil, değişiklik gibi
+        # davran (bkz. bölüm 5 kural 1: oy artık değiştirilebilir).
         existing = _existing_vote(poll, request)
-        voted_option_id = existing.option_id if existing else None
-        payload = _build_vote_payload(
-            poll, voted_option_id, ok=False, error="Bu ankete zaten oy verdin."
-        )
-        if _is_ajax(request):
-            return JsonResponse(payload, status=409)
-        messages.error(request, payload["error"])
-        return redirect("polls:detail", pk=poll.pk)
+        if existing is None:
+            return respond(None)
+        if existing.option_id != option.id:
+            existing.option = option
+            existing.save(update_fields=["option"])
+        return respond(option.id)
 
-    payload = _build_vote_payload(poll, option.id, ok=True)
-    if _is_ajax(request):
-        return JsonResponse(payload)
-    return redirect("polls:detail", pk=poll.pk)
+    return respond(option.id)
 
 
 def profile(request, username):

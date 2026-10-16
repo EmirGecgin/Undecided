@@ -48,7 +48,8 @@ Bu projede henüz bir linter/formatter yapılandırılmamış (`requirements.txt
 - **Oy verme JSON sözleşmesi** (bölüm 7), frontend (`static/js/main.js`) ile `polls` view'ları arasındaki tek temas noktasıdır. Sunucu tarafı doğrulama JS'den tamamen bağımsız olmalı: JS kapalıyken aynı endpoint normal form POST'u ile de çalışmalı (progressive enhancement, bölüm 7–8).
 - **Ortam bazlı veritabanı seçimi:** `config/settings.py`, `DATABASE_URL` tanımlıysa Supabase/Postgres'e (transaction pooler, port 6543, `DISABLE_SERVER_SIDE_CURSORS=True`) bağlanır; tanımlı değilse SQLite'a düşer. Migration'lar prod'da Vercel build'inde değil, yerelden (session pooler/direkt bağlantı, port 5432) çalıştırılır (bölüm 10).
 - **Fazlı geliştirme kuralı:** Bu dosyanın asıl amacı bölüm 12'deki fazları sırayla uygulamaktır — bir faz bitmeden sonrakine geçilmez, her fazın sonunda ilgili "Kabul kriterleri" tek tek doğrulanır. Şu an **Faz 5 tamamlandı** (Supabase + Vercel'e yayın); prototip canlıda. Faz 6'dan "anket bitiş süresi" ve "arama/kategoriler" eklendi (bkz. bölüm 12); listedeki diğer maddeler ihtiyaca göre seçilecek. **Prod dağıtım durumu ve kritik tuzaklar için bölüm 10.1'i mutlaka oku.**
-- **Oy verme görünümü context'e göre dallanır:** `templates/partials/poll_options.html` üç moddan birini render eder — `poll.show_results` doluysa gerçek sonuç barı (herkese), değilse `interactive` context değişkenine bakılır: `True` ise aktif oy formu (sadece `polls/detail.html` bunu `{% include ... with interactive=True %}` ile geçiyor), yoksa (ana sayfa/profil) nötr/yüzdesiz önizleme barı. **`static/js/main.js`'teki `renderPollResults` bu üç moddan "gerçek sonuç" halini DOM'da yeniden üretir** (AJAX oy sonrası) — şablondaki ARIA attribute'ları (`role=progressbar`, `aria-valuenow/min/max`, seçili seçeneğe eklenen "✓") burada da birebir olmalı; biri değişince diğerini güncellemeyi unutma (bir kez unutulup sonradan fark edilip düzeltildi).
+- **Oy verme görünümü context'e göre dallanır:** `templates/partials/poll_options.html`, hepsi tek bir `.poll-vote-area` sarmalayıcısı içinde olmak üzere üç moddan birini render eder — `poll.show_results` doluysa sonuç satırları (`interactive` ve `poll.can_vote` ikisi de doğruysa — yani detay sayfasında ve anket kapalı değilse — her satır tıklanabilir bir oy formudur: ilk oy da, oy **değiştirme** de aynı uca gider; aksi halde salt okunur `role=progressbar` satırı), değilse (`show_results` boş) `interactive` context değişkenine bakılır: `True` ise aktif oy formu (sadece `polls/detail.html` bunu `{% include ... with interactive=True %}` ile geçiyor), yoksa (ana sayfa/profil) nötr/yüzdesiz önizleme barı. **`static/js/main.js`'teki `renderPollResults` bu yapıyı DOM'da yeniden üretir** (her AJAX oy/değişiklik sonrası `.poll-vote-area`'nın içeriği komple değiştirilir) — şablondaki ARIA attribute'ları ve tıklanabilirlik mantığı (`data.is_closed`, `container.dataset.voteUrl`) burada da birebir olmalı; biri değişince diğerini güncellemeyi unutma (bir kez unutulup sonradan fark edilip düzeltildi).
+- **Static dosya önbellek kırma (prod):** `STORAGES["staticfiles"]`, `DEBUG=False` iken `ManifestStaticFilesStorage` kullanır — `collectstatic` her dosyayı içerik hash'iyle yeniden adlandırır (`main.a1b2c3.js`), `{% static %}` etiketi otomatik doğru adı çözer. Bu sayede bir deploy'da JS/CSS değişince tarayıcılar eski sürümü önbellekten kullanmaya devam etmez. Yerelde (`DEBUG=True`) düz `StaticFilesStorage` kullanılır, `collectstatic` çalıştırmaya gerek yok.
 
 ---
 
@@ -194,7 +195,7 @@ kararsizim/
 
 ## 5. Ürün Kuralları
 
-1. Bir anket için kişi başı **tek oy**. Prototipte **oy değiştirilemez**.
+1. Bir anket için kişi başı **tek oy**, ama **oy değiştirilebilir**: aynı kullanıcı/misafir tekrar oy verirse (poll kapalı değilse) mevcut `Vote` satırının `option`'ı güncellenir, yeni satır açılmaz — `polls/views.py: vote()`. Detay sayfasında sonuç satırlarının tamamı, poll açık olduğu sürece tıklanabilir oy formuna dönüşür (`poll.can_vote` = `not poll.is_closed`); seçili olan "✓" ile işaretlenir.
 2. **Sonuçlar oy verdikten sonra** görünür (yüzde + oy sayısı + çubuk grafik). Anket sahibi sonuçları her zaman görür.
 3. **Ana sayfa/profilde anketler oy verilebilir şekilde görünmez** — seçenekler nötr (yüzdesiz) renkli barlar olarak önizlenir, oy vermek için anket başlığına tıklanıp detay sayfasına gidilir. Oy verme butonları (aktif) sadece **detay sayfasında**, oy vermemiş/sahip olmayan kullanıcıya gösterilir.
 4. Toplam oy sayısı her durumda kartta görünür ("23 oy"). Ana sayfada kartlar 640px üzeri genişliklerde 2 sütun, mobilde tek sütun.
@@ -423,7 +424,7 @@ Her faz için aşağıdaki promptu Claude Code'a yapıştırabilirsin.
 - [ ] Veriler Supabase tablolarında görünüyor.
 
 ### Faz 6 — Sonraki adımlar (prototipten sonra, ihtiyaca göre seç)
-- Oy değiştirme / geri alma
+- [x] Oy değiştirme / geri alma
 - [x] Anket bitiş süresi ("24 saat sonra kapanır") ve kapanmış anket rozeti
 - [x] Arama ve kategoriler/etiketler (yemek, eğlence, alışveriş…)
 - Anket paylaşım linki ve Open Graph önizlemesi
