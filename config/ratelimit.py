@@ -35,6 +35,12 @@ def rate_limit(key_prefix, limit, window_seconds, message=DEFAULT_MESSAGE):
     def decorator(view_func):
         @wraps(view_func)
         def wrapped(request, *args, **kwargs):
+            if request.method != "POST":
+                # Sadece durum değiştiren gönderimi sınırla; formu görüntülemek
+                # (GET) ücretsiz olmalı — aksi halde sayfayı birkaç kez yenilemek
+                # bile kullanıcıyı kilitleyebiliyordu.
+                return view_func(request, *args, **kwargs)
+
             cache_key = f"ratelimit:{key_prefix}:{_client_key(request)}"
             count = _increment(cache_key, window_seconds)
             if count > limit:

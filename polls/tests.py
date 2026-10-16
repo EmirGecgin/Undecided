@@ -502,6 +502,17 @@ class RateLimitTests(TestCase):
         self.assertEqual(dummy_view(self._request("2.2.2.2")).status_code, 200)
         self.assertEqual(dummy_view(self._request("1.1.1.1")).status_code, 429)
 
+    def test_get_requests_are_never_rate_limited(self):
+        @rate_limit("test-endpoint-3", limit=1, window_seconds=60)
+        def dummy_view(request):
+            return JsonResponse({"ok": True})
+
+        factory = RequestFactory()
+        for _ in range(5):
+            request = factory.get("/dummy/", REMOTE_ADDR="3.3.3.3")
+            request.user = AnonymousUser()
+            self.assertEqual(dummy_view(request).status_code, 200)
+
 
 class GuestVoteMigrationTests(TestCase):
     def setUp(self):
