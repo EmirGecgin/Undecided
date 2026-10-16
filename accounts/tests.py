@@ -128,6 +128,13 @@ class LoginLogoutTests(TestCase):
         response = self.client.get(reverse("polls:home"))
         self.assertNotContains(response, "giris@example.com")
 
+    def test_navbar_username_links_to_own_profile(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("polls:home"))
+        self.assertContains(
+            response, 'href="%s"' % reverse("polls:profile", args=[self.user.username])
+        )
+
 
 class PasswordResetTests(TestCase):
     def setUp(self):

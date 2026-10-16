@@ -224,7 +224,7 @@ kararsizim/
 | `/parola-sifirla/<uidb64>/<token>/` | Sıfırlama bağlantısı → yeni parola formu | Herkes (geçerli token ile) |
 | `/admin/` | Django admin | Süper kullanıcı |
 
-**Navbar:** Logo "Kararsızım" · "Anket Aç" butonu (misafirse giriş sayfasına götürür) · Giriş/Kayıt veya kullanıcı adı + Çıkış.
+**Navbar:** Logo "Kararsızım" · "Anket Aç" butonu (misafirse giriş sayfasına götürür) · Giriş/Kayıt veya kullanıcı adı + Çıkış. Üye girişliyse `@kullaniciadi` artık kendi profil sayfasına (`/u/<username>/`) bağlantı — tıklayınca kullanıcı kendi açtığı anketleri görür (`templates/partials/navbar.html`).
 
 ---
 
